@@ -42,10 +42,12 @@ arquivos XML""",
         'l10n_br_delivery',
     ],
     'data': [
-            'account_invoice_workflow.xml',
+             
+             'account_invoice_workflow.xml',
              'l10n_br_account_view.xml',
              'account_invoice_view.xml',
              'res_partner_view.xml',
+             'wizard/nfe_carta_view.xml',
 
             ],
     'demo': [],
