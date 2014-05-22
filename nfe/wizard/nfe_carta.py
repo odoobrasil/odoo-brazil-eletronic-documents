@@ -18,6 +18,8 @@
 ###############################################################################
 
 from openerp.osv import osv, fields
+from pysped.nfe import ProcessadorNFe
+from pysped.nfe.processador_nfe import ProcessadorNFe
 
 class NfeCarta(osv.osv_memory):
     _name='nfe.carta'
@@ -42,6 +44,10 @@ class NfeCarta(osv.osv_memory):
         if context is None:
             context = {}
     
+        p = ProcessadorNFe()
+        
+        msg = self.browse(cr, uid, ids)[0].mensagem
+        
         invoice = self.pool.get('account.invoice')
         invoice_ids = context and context.get('active_ids') or []
         
@@ -50,13 +56,13 @@ class NfeCarta(osv.osv_memory):
         if invoice_ids:
             nfe_key = obj_invoice.browse(cr, uid, invoice_ids[0]).nfe_access_key
             
+            # Ambiente 1 = Produção e 2 = Homologação
+            p.corrigir_nota_evento(ambiente=2, chave_nfe= nfe_key, numero_sequencia=1, correcao= msg)
+        
+            
         return {'type': 'ir.actions.act_window_close'}
     
-    
-
-    
-    
-    
+        
 #  A mensagem deverá ser enviada no seguinte atributo: xCorrecao minimo 15 maximo 1000
 #  No pysped o método corrigir_nota_evento deverá ser utilizado processador_nfe.py 
 
