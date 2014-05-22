@@ -18,8 +18,7 @@
 ###############################################################################
 
 from openerp.osv import osv, fields
-from pysped.nfe import ProcessadorNFe
-from pysped.nfe.processador_nfe import ProcessadorNFe
+from nfe.sped.nfe.processing.xml import send_correction_letter
 
 class NfeCarta(osv.osv_memory):
     _name='nfe.carta'
@@ -43,29 +42,60 @@ class NfeCarta(osv.osv_memory):
 
         if context is None:
             context = {}
-    
-        p = ProcessadorNFe()
-        
-        msg = self.browse(cr, uid, ids)[0].mensagem
-        
-        invoice = self.pool.get('account.invoice')
-        invoice_ids = context and context.get('active_ids') or []
-        
-        obj_invoice = self.pool.get('account.invoice')
-        
-        if invoice_ids:
-            nfe_key = obj_invoice.browse(cr, uid, invoice_ids[0]).nfe_access_key
             
-            # Ambiente 1 = Produção e 2 = Homologação
-            p.corrigir_nota_evento(ambiente=2, chave_nfe= nfe_key, numero_sequencia=1, correcao= msg)
+        correcao = self.browse(cr, uid, ids)[0].mensagem
+         
+        obj_invoice = self.pool.get('account.invoice')
+        invoice_ids = context and context.get('active_ids') or []
+        invoice = obj_invoice.browse(cr, uid, invoice_ids[0])
         
+         
+        if invoice_ids:
+            chave_nfe = invoice.nfe_access_key
+             
+        company_pool = self.pool.get('res.company')
+        company = company_pool.browse(cr, uid, invoice.company_id.id)
+        
+        event_obj = self.pool.get('l10n_br_account.document_event')
+
+        
+        results = []   
+        try:                
+            processo = send_correction_letter(company, chave_nfe, correcao) 
+            vals = {
+                        'type': str(processo.webservice),
+                        'status': processo.resposta.retEvento[0].infEvento.cStat.valor,
+                        'response': '',
+                        'company_id': company.id,
+                        'origin': '[CC-E] ' + str(invoice.internal_number),
+                        #'file_sent': processo.arquivos[0]['arquivo'],
+                        #'file_returned': processo.arquivos[1]['arquivo'],
+                        'message': processo.resposta.retEvento[0].infEvento.xMotivo.valor,
+                        'state': 'done',
+                        'document_event_ids': invoice.id}
+            results.append(vals)
+                        
+        except Exception as e:
+            vals = {
+                    'type': '-1',
+                    'status': '000',
+                    'response': 'response',
+                    'company_id': company.id,
+                    'origin': '[CC-E]' + str(invoice.internal_number),
+                    'file_sent': 'False',
+                    'file_returned': 'False',
+                    'message': 'Erro desconhecido ' + e.message,
+                    'state': 'done',
+                    'document_event_ids': invoice.id
+                    }
+            results.append(vals)
+        finally:
+            for result in results:
+                event_obj.create(cr, uid, result)                
+       
             
         return {'type': 'ir.actions.act_window_close'}
     
-        
-#  A mensagem deverá ser enviada no seguinte atributo: xCorrecao minimo 15 maximo 1000
-#  No pysped o método corrigir_nota_evento deverá ser utilizado processador_nfe.py 
-
 NfeCarta()
         
         
