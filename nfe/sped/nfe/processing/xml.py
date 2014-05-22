@@ -171,3 +171,20 @@ def invalidate(company, invalidate_number):
         justificativa=invalidate_number.justificative)
                
     return processo
+
+def send_correction_letter(company, chave_nfe, correcao):
+    # Usar ambiente de homologação = 2
+    pr = processo(company)
+    
+    proc = pr.corrigir_nota_evento(
+        ambiente=2, 
+        chave_nfe= chave_nfe, 
+        numero_sequencia=1, 
+        correcao= correcao)
+    
+    return proc
+    
+
+    
+    
+    
