@@ -160,7 +160,7 @@ class email_template(osv.Model):
         context = context or {}
         values =  super(email_template, self).generate_email( cr, uid, template_id, res_id, context)
         if context.get('default_model') == 'account.invoice':
-            values['attachment_ids'] = context.get('attachment_ids')
+            values['attachment_ids'] = context.get('attachment_ids') 
         return values
         
         
