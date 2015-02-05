@@ -38,7 +38,6 @@
 							<field name="state"/>						
 							<field name="formInclusao" />
 							<field name="dataInclusao" />
-							<field name="file_path" />
 						</group>										
 					</group>	
 					<group string="Documentos eletrônicos">
