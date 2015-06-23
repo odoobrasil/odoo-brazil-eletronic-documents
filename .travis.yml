@@ -30,5 +30,11 @@ install:
 script:
   - travis_run_tests
 
+before_install:
+  - sudo locale-gen pt_BR
+  - sudo locale-gen pt_BR.UTF-8
+  - sudo dpkg-reconfigure locales
+  - sudo update-locale LANG=pt_BR.UTF-8
+
 after_success:
   coveralls
