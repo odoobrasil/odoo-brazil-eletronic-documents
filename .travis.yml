@@ -8,8 +8,11 @@ addons:
     packages:
       - expect-dev  # provides unbuffer utility
       - python-lxml  # because pip installation is slow
-      - libxml2
       - python-libxml2
+      - libxml2-dev 
+      - libxmlsec1-dev 
+      - libxslt-dev 
+      - python-lxml
 
 env:
   - VERSION="8.0" LINT_CHECK="1"
