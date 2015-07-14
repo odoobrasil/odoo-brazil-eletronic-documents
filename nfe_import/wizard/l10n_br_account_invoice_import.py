@@ -76,9 +76,17 @@ class NfeImportAccountInvoiceImport(orm.TransientModel):
         user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
         edoc_obj = self._get_nfe_factory(user.company_id.nfe_version)
 
-        edoc = edoc_obj.parse_edoc(importer.edoc_input, ftype)
+        # TODO: Tratar mais de um documento por vez.
+        edoc = edoc_obj.import_edoc(cr, uid, importer.edoc_input,
+                                            ftype, context)[0]
 
-        return {'type': 'ir.actions.act_window_close'}
+        model_obj = self.pool.get('ir.model.data')
+        action_obj = self.pool.get('ir.actions.act_window')
+        action_id = model_obj.get_object_reference(
+            cr, uid, edoc['action'][0], edoc['action'][1])[1]
+        res = action_obj.read(cr, uid, action_id)
+        res['domain'] = res['domain'][:-1] + ",('id', 'in', %s)]" % [edoc['id']]
+        return res
 
     def done(self, cr, uid, ids, context=False):
         return True
