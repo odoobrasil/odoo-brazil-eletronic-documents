@@ -36,10 +36,15 @@
 			<field name="view_id" ref="l10n_br_account_invoice_import_form"/>
             <field name="target">new</field>
 		</record>
-        <menuitem id="menu_l10n_br_account_processamento_periodico" name="Processamento Periodico" parent="l10n_br_account.menu_l10n_br_account" sequence="1"/>
-   		<menuitem id="menu_l10n_br_accouunt_periodic_processing_nfe_export"
+
+        <menuitem id="menu_l10n_br_account_others"
+                  name="Outros"
+                  parent="l10n_br_account.menu_l10n_br_account"
+                  sequence="20"/>
+
+   		<menuitem id="menu_l10n_br_account_nfe_import"
                   name="Importar Documento Eletrônico"
-                  parent="menu_l10n_br_account_processamento_periodico"
+                  parent="menu_l10n_br_account_others"
                   action="action_l10n_br_account_periodic_processing_edoc_import"/>
 	</data>
 </openerp>
