@@ -149,9 +149,7 @@ class Nfe_Mde(models.Model):
             self.chNFe,
             'nao_realizar_operacao')
         env_events = self.env['l10n_br_account.document_event']
-
         event = self._create_event('Operação não realizada', nfe_result)
-
         if nfe_result['code'] == '135':
             self.state = 'nap_realizado'
         else:
