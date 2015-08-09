@@ -50,6 +50,7 @@ Contributors
 
 * Luis Felipe Mileo <mileo@kmee.com.br>
 * Daniel Sadamo <daniel.sadamo@kmee.com.br>
+* Danimar Ribeiro <danimaribeiro@gmail.com>
 
 
 Maintainer
