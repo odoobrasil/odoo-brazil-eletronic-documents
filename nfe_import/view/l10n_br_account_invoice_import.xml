@@ -12,6 +12,7 @@
                         <group states = "init">
                             <field name="edoc_input" filename="file_name" colspan="2"/>
                             <field name="file_name" colspan="2" invisible="1"/>
+                            <field name="create_partner" />
                         </group>
                         <group states = "done">
                         </group>
