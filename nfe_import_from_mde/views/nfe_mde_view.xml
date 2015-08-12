@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<openerp>
+	<data>
+
+		<record model="ir.ui.view" id="view_nfe_import_from_mde_form">
+			<field name="name">nfe_import_from_mde.form</field>
+			<field name="model">nfe.mde</field>
+			<field name="type">form</field>			
+			<field name="inherit_id" ref="nfe_mde.view_nfe_mde_form" />
+			<field name="arch" type="xml">
+				<field name="file_path" position="after">
+					<field name="xml_downloaded" />
+				</field>
+				<button name="action_download_xml" position="after">
+					<button name="action_import_xml" string="Efetuar importação do xml" class="oe_highlight"
+						type="object" attrs="{ 'invisible': [('xml_downloaded', '=', False)] }"></button>
+				</button>
+			</field>
+		</record>
+	</data>
+</openerp>
