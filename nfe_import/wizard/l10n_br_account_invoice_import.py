@@ -100,8 +100,10 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
         except Exception as e:
             if isinstance(e.message, unicode):
                 _logger.error(e.message, exc_info=True)
+            elif isinstance(e.message, str):
+                _logger.error(e.message.decode('utf-8','ignore'), exc_info=True)
             else:
-                _logger.error(unicode(e.message, 'utf-8'), exc_info=True)
+                _logger.error(str(e), exc_info=True)
             raise Warning(
                 u'Erro ao tentar importar o xml\n'
                 u'Mensagem de erro:\n{0}'.format(
