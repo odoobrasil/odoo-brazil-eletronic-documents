@@ -81,10 +81,13 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 inv_values['partner_id'] = partner.id
             elif inv_values['partner_id'] == False:
                 raise Exception(
-                    u'Fornecedor não cadastrado, o xml não será importado\n'\
-                    u'Marque a opção "Criar fornecedor" se deseja importar mesmo assim')
+                    u'Fornecedor não cadastrado, o xml não será importado\n'
+                    u'Marque a opção "Criar fornecedor" se deseja importar '
+                    u'mesmo assim')
 
-            invoice_id = self.env['account.invoice'].create(inv_values)
+            invoice = self.env['account.invoice'].create(inv_values)
+            self.attach_doc_to_invoice(invoice.id, importer.edoc_input,
+                                       importer.file_name)
 
             model_obj = self.pool.get('ir.model.data')
             action_obj = self.pool.get('ir.actions.act_window')
@@ -92,7 +95,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 self._cr, self._uid, eDoc['action'][0], eDoc['action'][1])[1]
             res = action_obj.read(self._cr, self._uid, action_id)
             res['domain'] = res['domain'][:-1] + \
-                ",('id', 'in', %s)]" % [invoice_id]
+                ",('id', 'in', %s)]" % [invoice.id]
             return res
         except Exception as e:
             if isinstance(e.message, unicode):
@@ -100,8 +103,21 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             else:
                 _logger.error(unicode(e.message, 'utf-8'), exc_info=True)
             raise Warning(
-                u'Erro ao tentar importar o xml\nMensagem de erro:\n{0}'.format(
+                u'Erro ao tentar importar o xml\n'
+                u'Mensagem de erro:\n{0}'.format(
                     e.message))
+
+    def attach_doc_to_invoice(self, invoice_id, doc, file_name):
+        obj_attachment = self.env['ir.attachment']
+
+        attachment_id = obj_attachment.create({
+            'name': file_name,
+            'datas': doc,
+            'description': _('No Description'),
+            'res_model': 'account.invoice',
+            'res_id': invoice_id
+        })
+        return attachment_id
 
     @api.multi
     def done(self, cr, uid, ids, context=False):
