@@ -79,6 +79,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 partner = self.env['res.partner'].create(
                     inv_values['partner_values'])
                 inv_values['partner_id'] = partner.id
+                inv_values['account_id'] = partner.property_account_payable.id
             elif inv_values['partner_id'] == False:
                 raise Exception(
                     u'Fornecedor não cadastrado, o xml não será importado\n'
