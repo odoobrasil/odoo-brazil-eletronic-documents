@@ -49,6 +49,12 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
         help=u'Cria o fornecedor automaticamente caso não esteja cadastrado')
     state = fields.Selection([('init', 'init'), ('done', 'done')],
                              string='state', readonly=True, default='init')
+    fiscal_category_id = fields.Many2one(
+        'l10n_br_account.fiscal.category', 'Categoria Fiscal')
+    fiscal_position = fields.Many2one(
+        'account.fiscal.position', 'Fiscal Position', 
+        domain="[('fiscal_category_id','=',fiscal_category_id)]")
+    
 
     def _check_extension(self, filename):
         (__, ftype) = os.path.splitext(filename)
@@ -86,6 +92,12 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                     u'Marque a opção "Criar fornecedor" se deseja importar '
                     u'mesmo assim')
 
+            inv_values['fiscal_category_id'] = importer.fiscal_category_id.id
+            inv_values['fiscal_position'] = importer.fiscal_position.id
+            for inv_line in inv_values['invoice_line']:
+                inv_line[2]['fiscal_category_id'] = importer.fiscal_category_id.id
+                inv_line[2]['fiscal_position'] = importer.fiscal_position.id
+                        
             invoice = self.env['account.invoice'].create(inv_values)
             self.attach_doc_to_invoice(invoice.id, importer.edoc_input,
                                        importer.file_name)
