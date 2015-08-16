@@ -13,6 +13,8 @@
                             <field name="edoc_input" filename="file_name" colspan="2"/>
                             <field name="file_name" colspan="2" invisible="1"/>
                             <field name="create_partner" />
+                            <field name="fiscal_category_id" domain="[('journal_type','in',('purchase',)),('fiscal_type','=','product'),('type','=','input')]" required="1"/>
+							<field name="fiscal_position" required="1" domain="[('fiscal_category_id', '=', fiscal_category_id)]" />
                         </group>
                         <group states = "done">
                         </group>
