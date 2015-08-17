@@ -68,7 +68,8 @@ class AccountInvoice(orm.Model):
             nfe_obj = self._get_nfe_factory(inv.nfe_version)
 
             # nfe_obj = NFe310()
-            nfes = nfe_obj.get_xml(cr, uid, ids, int(company.nfe_environment), context)
+
+            nfes = nfe_obj.get_xml(cr, uid, ids, int(company.nfe_environment))
 
             for nfe in nfes:
                 # erro = nfe_obj.validation(nfe['nfe'])
@@ -190,28 +191,43 @@ class AccountInvoice(orm.Model):
                      }, context)
         return True 
         
+    def button_cancel(self, cr, uid, ids, context=None):
+        assert len(ids) == 1, ('This option should only be used for a single '
+                               'id at a time.')
+        if context is None:
+            context = {}
+        inv = self.browse(cr, uid, ids[0], context=context)
+
+        document_serie_id = inv.document_serie_id
+        fiscal_document_id = inv.document_serie_id.fiscal_document_id
+        electronic = inv.document_serie_id.fiscal_document_id.electronic
+        status = inv.nfe_status
+
+        if ((document_serie_id and fiscal_document_id and not electronic) or
+                not status):
+            return super(AccountInvoice, self).action_cancel(cr, uid,
+                                                       [inv.id], context)
+        else:
+            ctx = dict(context)
+            res = self.pool.get('ir.actions.act_window').for_xml_id(
+                cr, uid, 'nfe',
+                'action_nfe_invoice_cancel_form', context)
+            return res
+
     def cancel_invoice_online(self, cr, uid, ids, justificative, context=None):
-        
+        event_obj = self.pool.get('l10n_br_account.document_event')
+
         for inv in self.browse(cr, uid, ids, context):
-
-            document_serie_id = inv.document_serie_id
-            fiscal_document_id = inv.document_serie_id.fiscal_document_id
-            electronic = inv.document_serie_id.fiscal_document_id.electronic
-
-            if (document_serie_id and fiscal_document_id and not electronic):
-                return False
-                      
-            event_obj = self.pool.get('l10n_br_account.document_event')
             if inv.state in ('open','paid'):
                 company_pool = self.pool.get('res.company')
                 company = company_pool.browse(cr, uid, inv.company_id.id)
-                
+
                 validate_nfe_configuration(company)
                 validate_invoice_cancel(inv)
-            
-                results = []   
+
+                results = []
                 try:
-                    processo = cancel(company, inv.nfe_access_key, inv.nfe_protocol_number, justificative) 
+                    processo = cancel(company, inv.nfe_access_key, inv.nfe_protocol_number, justificative)
                     vals = {
                                 'type': str(processo.webservice),
                                 'status': processo.resposta.cStat.valor,
@@ -225,7 +241,7 @@ class AccountInvoice(orm.Model):
                                 'document_event_ids': inv.id}
 
                     self.attach_file_event(cr, uid, [inv.id], None, 'can', 'xml', context)
-                    for prot in processo.resposta.retEvento:                        
+                    for prot in processo.resposta.retEvento:
                         vals["status"] = prot.infEvento.cStat.valor
                         vals["message"] = prot.infEvento.xEvento.valor
                         if vals["status"] in ('101',  #Cancelamento de NF-e
@@ -243,10 +259,10 @@ class AccountInvoice(orm.Model):
                                                                'nfe_status': vals["status"]+ ' - ' +vals["message"]
                                                                })
                                 obj_cancel = self.pool.get('l10n_br_account.invoice.cancel')
-                                obj_cancel.create(cr,uid, 
+                                obj_cancel.create(cr,uid,
                                    {'invoice_id': inv.id,
                                     'justificative': justificative,
-                                    })                                                   
+                                    })
                     results.append(vals)
                 except Exception as e:
                     _logger.error(e.message,exc_info=True)
@@ -265,12 +281,11 @@ class AccountInvoice(orm.Model):
                     results.append(vals)
                 finally:
                     for result in results:
-                        event_obj.create(cr, uid, result)    
-             
+                        event_obj.create(cr, uid, result)
+
             elif inv.state in ('sefaz_export','sefaz_exception'):
                 _logger.error(_(u'Invoice in invalid state to cancel online'),exc_info=True)
                 #TODO
-        return
 
     def invoice_print(self, cr, uid, ids, context=None):
 

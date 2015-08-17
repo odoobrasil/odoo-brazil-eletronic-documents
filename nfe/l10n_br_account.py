@@ -102,7 +102,8 @@ class L10n_brAccountInvoiceInvalidNumber(orm.Model):
                         #    'file_returned': processo.arquivos[1]['arquivo'],
                             'message': processo.resposta.infInut.xMotivo.valor,
                             'state': 'done',
-                            'document_event_ids': item.id}
+                #            'document_event_ids': item.id TODO: Fix me! Modelagem incorreta!
+                }
                 results.append(vals)
                            
             except Exception as e:
@@ -117,7 +118,7 @@ class L10n_brAccountInvoiceInvalidNumber(orm.Model):
                         'file_returned': 'False',
                         'message': 'Erro desconhecido ' + e.message,
                         'state': 'done',
-                        'document_event_ids': item.id
+                        #'document_event_ids': item.id TODO: Fix me! Modelagem incorreta!
                         }
                 results.append(vals)
             finally:

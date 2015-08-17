@@ -3,18 +3,18 @@
 #                                                                             #
 # Copyright (C) 2014 Rodolfo Leme Bertozo - KMEE - www.kmee.com.br            #
 #                                                                             #
-#This program is free software: you can redistribute it and/or modify         #
-#it under the terms of the GNU Affero General Public License as published by  #
-#the Free Software Foundation, either version 3 of the License, or            #
-#(at your option) any later version.                                          #
+# This program is free software: you can redistribute it and/or modify        #
+# it under the terms of the GNU Affero General Public License as published by #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
 #                                                                             #
-#This program is distributed in the hope that it will be useful,              #
-#but WITHOUT ANY WARRANTY; without even the implied warranty of               #
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
-#GNU General Public License for more details.                                 #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU General Public License for more details.                                #
 #                                                                             #
-#You should have received a copy of the GNU General Public License            #
-#along with this program.  If not, see <http://www.gnu.org/licenses/>.        #
+# You should have received a copy of the GNU General Public License           #
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
 
 from openerp.osv import orm, fields
@@ -60,7 +60,7 @@ class NfeXmlPeriodicExport(orm.TransientModel):
 
         caminho = export_dir
 
-        #completa o caminho com homologacao ou producao
+        # completa o caminho com homologacao ou producao
         if obj_res_company.nfe_environment == '1':
             caminho = os.path.join(caminho, 'producao')
         elif obj_res_company.nfe_environment == '2':
@@ -83,10 +83,11 @@ class NfeXmlPeriodicExport(orm.TransientModel):
             if date_start[:7] == date_stop[:7]:
                 bkp_name = 'bkp_' + date_start[:7] + '.zip'
             else:
-                bkp_name = 'bkp_' + date_start[:7] + '_' + date_stop[:7] + '.zip'
+                bkp_name = 'bkp_' + \
+                    date_start[:7] + '_' + date_stop[:7] + '.zip'
 
             for diretorio in dirs_date:
-                #se houver arquivos fora do padrão (ano-mes, aaaa-mm) dentro
+                # se houver arquivos fora do padrão (ano-mes, aaaa-mm) dentro
                 #  da pasta de exportação
                 try:
                     if (int(diretorio[:4]) >= int(date_start[:4]) and
@@ -136,19 +137,20 @@ class NfeXmlPeriodicExport(orm.TransientModel):
                         # troca \n por espaços
                         caminho_arquivos = caminho_arquivos.replace('\n', ' ')
                         result = os.system("zip -r " + os.path.join(export_dir,
-                                            bkp_name) + ' ' + caminho_arquivos)
+                                                                    bkp_name) +
+                                           ' ' + caminho_arquivos)
                         if result:
                             raise orm.except_orm(
-                            u'Erro!',
-                            u'Não foi possível compactar os arquivos.',)
+                                u'Erro!',
+                                u'Não foi possível compactar os arquivos.',)
 
                         data = self.read(cr, uid, ids, [], context=context)[0]
                         orderFile = open(os.path.join(export_dir,
-                                            bkp_name), 'r')
+                                                      bkp_name), 'r')
                         itemFile = orderFile.read()
 
                         self.write(cr, uid, ids,
-                                    {'state': 'done',
+                                   {'state': 'done',
                                     'zip_file': base64.b64encode(itemFile),
                                     'name': bkp_name}, context=context)
                 except:
