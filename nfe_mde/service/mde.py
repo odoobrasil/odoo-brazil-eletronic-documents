@@ -81,6 +81,7 @@ def distribuicao_nfe(company, ultimo_nsu):
                 )
                 orig_file_cont = orig_file_desc.read()
                 orig_file_desc.close()
+
                 path = os.path.join(
                     save_path,
                     'resumo_nfe-' +
@@ -90,6 +91,7 @@ def distribuicao_nfe(company, ultimo_nsu):
                 arq.write(orig_file_cont)
                 arq.close()       
                 
+
                 nfe_list.append({
                     'path': path, 'xml': orig_file_cont, 'NSU': doc.NSU.valor,
                     'schema': doc.schema.valor
