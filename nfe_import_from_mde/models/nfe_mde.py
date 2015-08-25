@@ -22,6 +22,8 @@ import os.path
 import base64
 from openerp import models, api, fields
 from openerp.exceptions import Warning
+from pysped.nfe.danfe import DANFE
+from pysped.nfe.leiaute import ProcNFe_310
 
 
 class Nfe_Mde(models.Model):
@@ -65,3 +67,32 @@ class Nfe_Mde(models.Model):
         else:
             raise Warning(u'O arquivo xml já não existe mais no caminho especificado\n'
                           u'Contate o responsável pelo sistema')
+    
+    @api.multi    
+    def action_visualizar_danfe(self):
+        raise Warning(u'Não implementado ainda! Desculpe!')
+        self.ensure_one()
+        if os.path.isfile(self.file_path):
+            arq = open(self.file_path, 'r')            
+            content = arq.read().decode('utf-8')
+            arq.close()     
+
+            
+            #TODO Finalizar DANFE, talvez reutilizar o código do NF-e,
+            # porém precisa refatorar aquele código
+            procnfe = ProcNFe_310()
+            procnfe.xml = content
+            danfe = DANFE()
+            danfe.NFe = procnfe.NFe
+            danfe.protNFe = procnfe.protNFe
+            danfe.caminho = "/tmp/"
+            danfe.gerar_danfe()
+            
+            
+        else:
+            raise Warning(u'O arquivo xml já não existe mais no caminho especificado\n'
+                          u'Contate o responsável pelo sistema')
+        
+        
+        
+        
