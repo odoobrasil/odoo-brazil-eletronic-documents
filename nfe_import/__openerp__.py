@@ -35,7 +35,9 @@
     ],
     'data': [
         'view/l10n_br_account_invoice_import.xml',
+        'view/nfe_import_view.xml'
     ],
+    'css': ['static/src/css/nfe_import.css'],
     'active': False,
     "installable": True,
     "auto_install": False,

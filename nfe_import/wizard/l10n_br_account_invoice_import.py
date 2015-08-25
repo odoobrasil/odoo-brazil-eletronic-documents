@@ -23,6 +23,7 @@
 ##############################################################################
 
 import logging
+import cPickle
 from openerp import models, fields, api
 from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
@@ -52,9 +53,8 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal')
     fiscal_position = fields.Many2one(
-        'account.fiscal.position', 'Fiscal Position', 
+        'account.fiscal.position', 'Posição Fiscal',
         domain="[('fiscal_category_id','=',fiscal_category_id)]")
-    
 
     def _check_extension(self, filename):
         (__, ftype) = os.path.splitext(filename)
@@ -94,45 +94,67 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
             inv_values['fiscal_category_id'] = importer.fiscal_category_id.id
             inv_values['fiscal_position'] = importer.fiscal_position.id
+
+            product_import_ids = []
+
             for inv_line in inv_values['invoice_line']:
-                inv_line[2]['fiscal_category_id'] = importer.fiscal_category_id.id
+                inv_line[2][
+                    'fiscal_category_id'] = importer.fiscal_category_id.id
                 inv_line[2]['fiscal_position'] = importer.fiscal_position.id
-                        
-            invoice = self.env['account.invoice'].create(inv_values)
-            self.attach_doc_to_invoice(invoice.id, importer.edoc_input,
-                                       importer.file_name)
+                inv_line[2]['cfop_id'] = importer.fiscal_position.cfop_id.id
+
+                product_import_ids.append(
+                    (0, 0,
+                     {'product_id': inv_line[2]['product_id'],
+                      'uom_id': inv_line[2]['uos_id'],
+                      'code_product_xml': inv_line[2]['product_code_xml'],
+                      'uom_xml': inv_line[2]['uom_xml'],
+                      'product_xml': inv_line[2]['product_name_xml'],
+                      'cfop_id': inv_line[2]['cfop_id'],
+                      'cfop_xml': inv_line[2]['cfop_xml'],
+                      'quantity_xml': inv_line[2]['quantity'],
+                      'unit_amount_xml': inv_line[2]['price_unit'],
+                      'discount_total_xml': inv_line[2]['discount_value'],
+                      'total_amount_xml': inv_line[2]['price_gross']
+                      }))
+
+            values = {'supplier_id': inv_values['partner_id'],
+                      'fiscal_category_id': importer.fiscal_category_id.id,
+                      'fiscal_position': importer.fiscal_position.id,
+                      'number': inv_values['internal_number'],
+                      'natureza_operacao': inv_values['nat_op'],
+                      'amount_total': inv_values['amount_total'],
+                      'xml_data': cPickle.dumps(inv_values),
+                      'product_import_ids': product_import_ids,
+                      'edoc_input': importer.edoc_input,
+                      'file_name': importer.file_name}
+
+            import_edit = self.env['nfe.import.edit'].create(values)
 
             model_obj = self.pool.get('ir.model.data')
             action_obj = self.pool.get('ir.actions.act_window')
             action_id = model_obj.get_object_reference(
-                self._cr, self._uid, eDoc['action'][0], eDoc['action'][1])[1]
+                self._cr, self._uid, 'nfe_import', 'action_nfe_import_edit_form')[1]
             res = action_obj.read(self._cr, self._uid, action_id)
-            res['domain'] = res['domain'][:-1] + \
-                ",('id', 'in', %s)]" % [invoice.id]
+            res['res_id'] = import_edit.id
             return res
         except Exception as e:
             if isinstance(e.message, unicode):
                 _logger.error(e.message, exc_info=True)
             elif isinstance(e.message, str):
-                _logger.error(e.message.decode('utf-8','ignore'), exc_info=True)
+                _logger.error(
+                    e.message.decode(
+                        'utf-8',
+                        'ignore'),
+                    exc_info=True)
             else:
                 _logger.error(str(e), exc_info=True)
             raise Warning(
                 u'Erro ao tentar importar o xml\n'
                 u'Mensagem de erro:\n{0}'.format(
-                    e.message))
+                    e.message.decode('utf-8')))
 
-    def attach_doc_to_invoice(self, invoice_id, doc, file_name):
-        obj_attachment = self.env['ir.attachment']
 
-        attachment_id = obj_attachment.create({
-            'name': file_name,
-            'datas': doc,
-            'description': _('No Description'),
-            'res_model': 'account.invoice',
-            'res_id': invoice_id
-        })
-        return attachment_id
 
     @api.multi
     def done(self, cr, uid, ids, context=False):
