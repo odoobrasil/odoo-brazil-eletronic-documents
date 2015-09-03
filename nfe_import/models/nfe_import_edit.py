@@ -136,7 +136,7 @@ class NfeImportEdit(models.TransientModel):
         return attachment_id
 
 
-class NfeImportProducts(models.Model):
+class NfeImportProducts(models.TransientModel):
     _name = 'nfe.import.products'
 
     nfe_import_id = fields.Many2one('nfe.import.edit', string="Nfe Import")

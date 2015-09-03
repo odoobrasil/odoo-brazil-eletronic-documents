@@ -20,4 +20,4 @@
 ###############################################################################
 
 
-from nfe_import.models import nfe_import_edit
+from . import nfe_import_edit

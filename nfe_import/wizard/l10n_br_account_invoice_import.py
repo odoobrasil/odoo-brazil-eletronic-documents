@@ -141,6 +141,10 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
         except Exception as e:
             if isinstance(e.message, unicode):
                 _logger.error(e.message, exc_info=True)
+                raise Warning(
+                    u'Erro ao tentar importar o xml\n'
+                    u'Mensagem de erro:\n{0}'.format(
+                        e.message))
             elif isinstance(e.message, str):
                 _logger.error(
                     e.message.decode(
@@ -152,9 +156,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             raise Warning(
                 u'Erro ao tentar importar o xml\n'
                 u'Mensagem de erro:\n{0}'.format(
-                    e.message.decode('utf-8')))
-
-
+                    e.message.encode('utf-8', 'ignore')))
 
     @api.multi
     def done(self, cr, uid, ids, context=False):
