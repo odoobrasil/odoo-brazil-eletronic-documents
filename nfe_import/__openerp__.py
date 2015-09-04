@@ -25,7 +25,7 @@
     'version': '0.1',
     'category': 'Account addons',
     'license': 'AGPL-3',
-    'author': 'KMEE',
+    'author': 'KMEE, TrustCode',
     'website': 'http://www.kmee.com.br',
     'external_dependencies': {
         'python': ['pysped'],
