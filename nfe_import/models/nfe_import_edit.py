@@ -56,6 +56,9 @@ class NfeImportEdit(models.TransientModel):
 
     product_import_ids = fields.One2many('nfe.import.products',
                                          'nfe_import_id', string="Produtos")
+    create_product = fields.Boolean(
+        u'Criar produtos automaticamente?', default=True,
+        help=u'Cria o produto automaticamente caso não seja informado um')
 
     @api.model
     def create(self, values):
@@ -86,24 +89,40 @@ class NfeImportEdit(models.TransientModel):
     @api.multi
     def confirm_values(self):
         self.ensure_one()
-        self._validate()
         inv_values = cPickle.loads(self.xml_data.encode('ascii', 'ignore'))
 
         index = 0
         for item in self.product_import_ids:
             if not inv_values['invoice_line'][index][2]['product_id']:
-                # Creating the product code related to supplier
-                self.env['product.supplierinfo'].create(
+                if self.create_product:
+                    p_ids = self.product_create(index)
+                    prod = self.pool.get('product.product').browse(self._cr, self._uid, p_ids)
+                    item.product_id = prod.id
+                    item.uom_id = prod.uos_id.id
+                    # Creating the product code related to supplier
+                    self.env['product.supplierinfo'].create(
+                    {'name': self.supplier_id.id,
+                     'product_name': item.product_xml,
+                     'product_code': item.code_product_xml,
+                     'product_tmpl_id': prod.product_tmpl_id.id})
+                    inv_values['invoice_line'][index][2][
+                        'product_id'] = prod.id
+                else:
+                    # Creating the product code related to supplier
+                    self.env['product.supplierinfo'].create(
                     {'name': self.supplier_id.id,
                      'product_name': item.product_xml,
                      'product_code': item.code_product_xml,
                      'product_tmpl_id': item.product_id.product_tmpl_id.id})
 
-            inv_values['invoice_line'][index][2][
-                'product_id'] = item.product_id.id
-            inv_values['invoice_line'][index][2]['uos_id'] = item.uom_id.id
-            inv_values['invoice_line'][index][2]['cfop_id'] = item.cfop_id.id
+            else:
+                inv_values['invoice_line'][index][2][
+                    'product_id'] = item.product_id.id
+                inv_values['invoice_line'][index][2]['uos_id'] = item.uom_id.id
+                inv_values['invoice_line'][index][2]['cfop_id'] = item.cfop_id.id
             index += 1
+
+        self._validate()
 
         invoice = self.env['account.invoice'].create(inv_values)
         self.attach_doc_to_invoice(invoice.id, self.edoc_input,
@@ -118,6 +137,45 @@ class NfeImportEdit(models.TransientModel):
             ",('id', 'in', %s)]" % [invoice.id]
         return res
 
+    @api.multi
+    def product_create(self, index):
+        inv_values = cPickle.loads(self.xml_data.encode('ascii', 'ignore'))
+        product_ids = None
+        if not inv_values['invoice_line'][index][2]['product_id']:
+            cProd = inv_values['invoice_line'][index][2]['product_code_xml']
+            cEan = inv_values['invoice_line'][index][2]['ean_xml']
+            cName = inv_values['invoice_line'][index][2]['product_name_xml']
+            product_ids = self.pool.get('product.product').search(
+                self._cr, self._uid, [('default_code', '=', cProd)])
+            if cEan != u'' and len(product_ids) == 0:
+                product_ids = self.pool.get('product.product').search(
+                    self._cr, self._uid, [('ean13', '=', cEan)])
+            if len(product_ids) == 0:
+                product_ids = self.pool.get('product.template').search(
+                self._cr, self._uid, [('name', '=', cName)])
+
+            if len(product_ids) == 0:
+                ncm_ids = inv_values['invoice_line'][index][2]['fiscal_classification_id']
+                if not ncm_ids:
+                    # cadastra o NCM
+                    vals_ncm = {'name': inv_values['invoice_line'][index][2]['ncm_xml'],
+                        'type': 'normal',
+                    }
+
+                    ncm_ids = self.pool.get('account.product.fiscal.classification').create(self._cr, self._uid, vals_ncm, context=None)
+
+                vals_p = {'name': cName,
+                    'type': 'product',
+                    'ncm_id': ncm_ids,
+                }
+                prodt_ids = self.pool.get('product.template').create(self._cr, self._uid, vals_p, context=None)
+                vals_pp = {
+                    'default_code': cProd,
+                    'ean13': cEan,
+                }
+                self.pool.get('product.product').write(self._cr, self._uid, prodt_ids, vals_pp, context=None)
+                product_ids = prodt_ids
+        return product_ids
     @api.onchange('fiscal_position')
     def position_fiscal_onchange(self):
         for item in self.product_import_ids:
