@@ -20,6 +20,7 @@
 							<field name="number" />
 							<field name="natureza_operacao" />
 							<field name="amount_total" widget="monetary"  />							
+							<field name="create_product" />
 						</group>
 					</group>
 					<group>
@@ -35,6 +36,7 @@
 				</form>
 			</field>
 		</record>
+
 		<record id="action_nfe_import_edit_form" model="ir.actions.act_window">
 			<field name="name">Abrir edição importação</field>
 			<field name="res_model">nfe.import.edit</field>
