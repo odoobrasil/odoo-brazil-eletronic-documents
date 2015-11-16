@@ -39,9 +39,21 @@ def __processo(company):
     p.estado = company.partner_id.l10n_br_city_id.state_id.code
     p.certificado.stream_certificado = base64.decodestring(company.nfe_a1_file)
     p.certificado.senha = company.nfe_a1_password
-    p.salvar_arquivos = True
-    p.contingencia_SCAN = False
+    p.consulta_servico_ao_enviar = company.is_nfe_check_service
+    p.salvar_arquivos = company.is_nfe_save_files
+    p.caminho_temporario = os.path.join(company.nfe_temp_path, '/tmp/')
     p.caminho = company.nfe_export_folder
+    p.maximo_tentativas_consulta_recibo = company.nfe_max_receipt_check
+
+    if company.nfe_send_method == 'normal':
+        p.contingencia_SCAN = False
+        p.contingencia = False
+    elif company.nfe_send_method == 'contingencia':
+        p.contingencia_SCAN = False
+        p.contingencia = True
+    elif company.nfe_send_method == 'contingencia_scan':
+        p.contingencia_SCAN = True
+        p.contingencia = False
     return p
 
 
