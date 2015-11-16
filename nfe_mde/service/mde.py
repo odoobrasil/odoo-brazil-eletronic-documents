@@ -88,8 +88,9 @@ def distribuicao_nfe(company, ultimo_nsu):
                     doc.NSU.valor +
                     '.xml')
                 arq = open(path, 'w')
-                arq.write(orig_file_cont.encode('utf-8'))
-                arq.close()
+                arq.write(orig_file_cont)
+                arq.close()       
+                
 
                 nfe_list.append({
                     'path': path, 'xml': orig_file_cont, 'NSU': doc.NSU.valor,
