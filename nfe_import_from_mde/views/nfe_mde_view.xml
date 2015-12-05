@@ -8,7 +8,7 @@
 			<field name="type">form</field>			
 			<field name="inherit_id" ref="nfe_mde.view_nfe_mde_form" />
 			<field name="arch" type="xml">
-				<field name="file_path" position="after">
+				<field name="dataInclusao" position="after">
 					<field name="xml_downloaded" />
 				</field>
 				<button name="action_download_xml" position="after">
