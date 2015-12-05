@@ -67,7 +67,6 @@ class NfeImportEdit(models.TransientModel):
     def _validate(self):
         indice = 1
         for item in self.product_import_ids:
-            print item.product_xml
             if not item.product_id:
                 raise Warning(u'Escolha o produto do item {0} - {1}'.format(
                               str(indice), item.product_xml))
@@ -93,33 +92,29 @@ class NfeImportEdit(models.TransientModel):
 
         index = 0
         for item in self.product_import_ids:
-            if not inv_values['invoice_line'][index][2]['product_id']:
+            line = inv_values['invoice_line'][index]
+
+            if not line[2]['product_id']:
                 if self.create_product:
-                    p_ids = self.product_create(index)
-                    prod = self.pool.get('product.product').browse(self._cr, self._uid, p_ids)
-                    item.product_id = prod.id
-                    item.uom_id = prod.uos_id.id
-                    # Creating the product code related to supplier
-                    self.env['product.supplierinfo'].create(
-                    {'name': self.supplier_id.id,
-                     'product_name': item.product_xml,
-                     'product_code': item.code_product_xml,
-                     'product_tmpl_id': prod.product_tmpl_id.id})
-                    inv_values['invoice_line'][index][2][
-                        'product_id'] = prod.id
-                else:
-                    # Creating the product code related to supplier
-                    self.env['product.supplierinfo'].create(
+
+                    product_created = self.product_create(
+                        inv_values, line, item)
+                    item.product_id = product_created
+                    item.uom_id = product_created.uom_id
+
+                    line[2]['product_id'] = product_created.id
+
+                self.env['product.supplierinfo'].create(
                     {'name': self.supplier_id.id,
                      'product_name': item.product_xml,
                      'product_code': item.code_product_xml,
                      'product_tmpl_id': item.product_id.product_tmpl_id.id})
 
             else:
-                inv_values['invoice_line'][index][2][
-                    'product_id'] = item.product_id.id
-                inv_values['invoice_line'][index][2]['uos_id'] = item.uom_id.id
-                inv_values['invoice_line'][index][2]['cfop_id'] = item.cfop_id.id
+                line[2]['product_id'] = item.product_id.id
+                line[2]['uos_id'] = item.uom_id.id
+                line[2]['cfop_id'] = item.cfop_id.id
+
             index += 1
 
         self._validate()
@@ -138,44 +133,29 @@ class NfeImportEdit(models.TransientModel):
         return res
 
     @api.multi
-    def product_create(self, index):
-        inv_values = cPickle.loads(self.xml_data.encode('ascii', 'ignore'))
-        product_ids = None
-        if not inv_values['invoice_line'][index][2]['product_id']:
-            cProd = inv_values['invoice_line'][index][2]['product_code_xml']
-            cEan = inv_values['invoice_line'][index][2]['ean_xml']
-            cName = inv_values['invoice_line'][index][2]['product_name_xml']
-            product_ids = self.pool.get('product.product').search(
-                self._cr, self._uid, [('default_code', '=', cProd)])
-            if cEan != u'' and len(product_ids) == 0:
-                product_ids = self.pool.get('product.product').search(
-                    self._cr, self._uid, [('ean13', '=', cEan)])
-            if len(product_ids) == 0:
-                product_ids = self.pool.get('product.template').search(
-                self._cr, self._uid, [('name', '=', cName)])
+    def product_create(self, inv_values, line, item_grid):
+        if not line[2]['fiscal_classification_id']:
+            ncm = self.env['account.product.fiscal.classification'].create({
+                'name': line[2]['ncm_xml'],
+                'company_id': inv_values['company_id'],
+                'type': 'normal'
+            })
+            line[2]['fiscal_classification_id'] = ncm.id
 
-            if len(product_ids) == 0:
-                ncm_ids = inv_values['invoice_line'][index][2]['fiscal_classification_id']
-                if not ncm_ids:
-                    # cadastra o NCM
-                    vals_ncm = {'name': inv_values['invoice_line'][index][2]['ncm_xml'],
-                        'type': 'normal',
-                    }
-
-                    ncm_ids = self.pool.get('account.product.fiscal.classification').create(self._cr, self._uid, vals_ncm, context=None)
-
-                vals_p = {'name': cName,
-                    'type': 'product',
-                    'ncm_id': ncm_ids,
+        vals = {'name': line[2]['product_name_xml'],
+                'type': 'product',
+                'fiscal_type': 'product',
+                'ncm_id': line[2]['fiscal_classification_id'],
+                'default_code': line[2]['product_code_xml'],
+                'ean13': line[2]['ean_xml'],
                 }
-                prodt_ids = self.pool.get('product.template').create(self._cr, self._uid, vals_p, context=None)
-                vals_pp = {
-                    'default_code': cProd,
-                    'ean13': cEan,
-                }
-                self.pool.get('product.product').write(self._cr, self._uid, prodt_ids, vals_pp, context=None)
-                product_ids = prodt_ids
-        return product_ids
+
+        if item_grid.uom_id:
+            vals['uom_id'] = item_grid.uom_id
+
+        product_tmpl = self.env['product.template'].create(vals)
+        return product_tmpl.product_variant_ids[0]
+
     @api.onchange('fiscal_position')
     def position_fiscal_onchange(self):
         for item in self.product_import_ids:
