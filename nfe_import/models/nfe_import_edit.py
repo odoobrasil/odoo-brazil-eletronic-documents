@@ -34,7 +34,7 @@ class NfeImportEdit(models.TransientModel):
                  u"Editando NF-e ({0})".format(
                      rec.number)) for rec in self]
 
-    xml_data = fields.Char(string="Xml Data", size=20000, readonly=True)
+    xml_data = fields.Char(string="Xml Data", size=200000, readonly=True)
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')
     file_name = fields.Char('File Name', size=128)
@@ -135,11 +135,14 @@ class NfeImportEdit(models.TransientModel):
     @api.multi
     def product_create(self, inv_values, line, item_grid):
         if not line[2]['fiscal_classification_id']:
-            ncm = self.env['account.product.fiscal.classification'].create({
-                'name': line[2]['ncm_xml'],
-                'company_id': inv_values['company_id'],
-                'type': 'normal'
-            })
+            fc_env = self.env['account.product.fiscal.classification']
+            ncm = fc_env.search([('name', '=', line[2]['ncm_xml'])], limit=1)
+            if not ncm:
+                ncm = fc_env.create({
+                    'name': line[2]['ncm_xml'],
+                    'company_id': inv_values['company_id'],
+                    'type': 'normal'
+                })
             line[2]['fiscal_classification_id'] = ncm.id
 
         vals = {'name': line[2]['product_name_xml'],
@@ -150,8 +153,12 @@ class NfeImportEdit(models.TransientModel):
                 'ean13': line[2]['ean_xml'],
                 }
 
+        if check_ean(line[2]['ean_xml']):
+            vals['ean13'] = line[2]['ean_xml']
+
         if item_grid.uom_id:
-            vals['uom_id'] = item_grid.uom_id
+            vals['uom_id'] = item_grid.uom_id.id
+            vals['uom_po_id'] = item_grid.uom_id.id
 
         product_tmpl = self.env['product.template'].create(vals)
         return product_tmpl.product_variant_ids[0]
