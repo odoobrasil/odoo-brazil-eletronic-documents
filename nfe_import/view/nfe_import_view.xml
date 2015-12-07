@@ -21,6 +21,7 @@
 							<field name="natureza_operacao" />
 							<field name="amount_total" widget="monetary"  />							
 							<field name="create_product" />
+							<field name="product_category_id" attrs="{'invisible': [('create_product', '=', False)] }" /> 
 						</group>
 					</group>
 					<group>

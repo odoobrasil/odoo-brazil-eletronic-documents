@@ -352,11 +352,7 @@ class NFeSerializer(object):
         inv_line['fiscal_classification_id'] = fc_id[0].id if len(fc_id) > 0 \
             else False
 
-        cfop_ids = self.env['l10n_br_account_product.cfop'].search(
-            [('code', '=', self.det.prod.CFOP.valor)])
-
         inv_line['cfop_xml'] = self.det.prod.CFOP.valor
-        inv_line['cfop_id'] = cfop_ids[0].id if len(cfop_ids) > 0 else False
 
         uom_ids = self.env['product.uom'].search(
             [('name', '=ilike', self.det.prod.uCom.valor)])
@@ -431,7 +427,7 @@ class NFeSerializer(object):
                     [('code', '=', '49'),
                      ('domain', '=', 'ipi')])
                 inv_line['ipi_type'] = 'percent'
-                inv_line['ipi_cst_id'] = ipi_ids[0] if ipi_ids else False
+                inv_line['ipi_cst_id'] = ipi_ids[0].id if ipi_ids else False
 
             inv_line['ipi_value'] = self.det.imposto.IPI.vIPI.valor
 
