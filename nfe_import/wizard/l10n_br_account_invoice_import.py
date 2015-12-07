@@ -22,6 +22,7 @@
 #
 ##############################################################################
 
+import os
 import logging
 import cPickle
 from openerp import models, fields, api
@@ -29,7 +30,7 @@ from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
 from openerp.exceptions import Warning
 
-import os
+from .service.nfe_serializer import NFeSerializer
 
 
 _logger = logging.getLogger(__name__)
@@ -58,8 +59,8 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
     def _check_extension(self, filename):
         (__, ftype) = os.path.splitext(filename)
-        if ftype.lower() not in ('.txt', '.xml'):
-            raise Warning(_('Please use a file in extensions TXT or XML'))
+        if ftype.lower() not in ('.xml'):
+            raise Warning(_('Please select a correct XML file'))
         return ftype
 
     def _get_nfe_factory(self, nfe_version):
@@ -73,11 +74,8 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
             ftype = self._check_extension(importer.file_name)
 
-            edoc_obj = self._get_nfe_factory(
-                self.env.user.company_id.nfe_version)
-
-            # TODO: Tratar mais de um documento por vez.
-            eDoc = edoc_obj.import_edoc(
+            nfe_serializer = NFeSerializer()
+            eDoc = nfe_serializer.import_edoc(
                 self._cr, self._uid, importer.edoc_input, ftype, context)[0]
 
             inv_values = eDoc['values']

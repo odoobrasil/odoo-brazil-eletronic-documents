@@ -3,6 +3,7 @@
 #
 #    Copyright (C) 2015 KMEE (http://www.kmee.com.br)
 #    @author Luis Felipe Miléo <mileo@kmee.com.br>
+#             Danimar Ribeiro <danimaribeiro@gmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -22,7 +23,7 @@
 
 {
     'name': 'Importação de Documento Fiscal Eletronico',
-    'version': '0.1',
+    'version': '8.0.1.0.0',
     'category': 'Account addons',
     'license': 'AGPL-3',
     'author': 'KMEE, TrustCode',
