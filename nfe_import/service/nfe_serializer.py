@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2015 TrustCode - www.trustcode.com.br                         #                                    #
+# Copyright (C) 2015 TrustCode - www.trustcode.com.br                         #
 #    Authors: Luis Felipe Mileo                                               #
 #            Fernando Marcato Rodrigues                                       #
 #            Daniel Sadamo Hirayama                                           #
@@ -24,27 +24,25 @@
 import re
 import base64
 import string
-from datetime import datetime
-import tempfile
-
-from openerp import pooler
-from openerp.osv import orm
-from openerp.tools.translate import _
 import pysped
+import tempfile
+from datetime import datetime
+
+from openerp.tools.translate import _
+
 from pysped.nfe.leiaute.consrecinfe_310 import ProtNFe
 
 
-class NFe310(object):
+class NFeSerializer(object):
 
     def __init__(self):
         self.nfe = None
         self.nfref = None
         self.det = None
         self.dup = None
+        self.env = None
 
-    def deserialize(self, cr, uid, nfe, context):
-        if not context:
-            context = {'lang': 'pt_BR'}
+    def deserialize(self, nfe):
         if nfe.infNFe.ide.tpNF.valor == 0:
             action = ('account', 'action_invoice_tree1')
         elif nfe.infNFe.ide.tpNF.valor == 1:
@@ -60,40 +58,31 @@ class NFe310(object):
         self.dup = self._get_Dup()
         self.dup.xml = nfe.xml
 
-        pool = pooler.get_pool(cr.dbname)
-        invoice_obj = pool.get('account.invoice')
-
-        try:
-            nfe_references = self._get_nfe_references(
-                cr, uid, pool, context=context)
-            fiscal_doc_obj = pool.get(
-                'l10n_br_account_product.document.related')
-            fiscal_doc_id = fiscal_doc_obj.create(cr, uid, nfe_references)
-        except AttributeError:
-            pass
-
         invoice_vals = {
             'issuer': '1'
         }
+        try:
+            nfe_references = self._get_nfe_references()
+            ref = self.env['l10n_br_account_product.document.related'].create(
+                nfe_references)
 
-        carrier_data = self._get_carrier_data(cr, uid, pool, context=context)
-        in_out_data = self._get_in_out_adress(cr, uid, pool, context=context)
-        receiver = self._get_receiver(cr, uid, pool, context=context)
-        nfe_identification = self._get_nfe_identification(
-            cr, uid, pool, context=context)
+            invoice_vals.update(
+                {'fiscal_document_related_ids': [(4, ref.id, None)]})
+        except AttributeError:
+            pass
 
-        emmiter = self._get_emmiter(cr, uid, pool, context=context)
-        encashment_data = self._get_encashment_data(
-            cr, uid, pool, context=context)
+        carrier_data = self._get_carrier_data()
+        in_out_data = self._get_in_out_adress()
+        receiver = self._get_receiver()
+        nfe_identification = self._get_nfe_identification()
 
-        adittional = self._get_additional_information(
-            cr,
-            uid,
-            pool,
-            context=context)
-        weight_data = self._get_weight_data(cr, uid, pool, context=context)
-        protocol = self._get_protocol(cr, uid, pool, context=context)
-        total = self._get_total(cr, uid, context=context)
+        emmiter = self._get_emmiter()
+        encashment_data = self._get_encashment_data()
+
+        adittional = self._get_additional_information()
+        weight_data = self._get_weight_data()
+        protocol = self._get_protocol()
+        total = self._get_total()
 
         invoice_vals.update(carrier_data)
         invoice_vals.update(in_out_data)
@@ -108,22 +97,22 @@ class NFe310(object):
         inv_line_ids = []
         for det in self.nfe.infNFe.det:
             self.det = det
-            inv_line_ids += self._get_details(cr, uid, pool, context=context)
+            inv_line_ids += self._get_details()
 
         invoice_vals['invoice_line'] = inv_line_ids
 
         return invoice_vals, action
 
-    def _get_nfe_identification(self, cr, uid, pool, context=None):
+    def _get_nfe_identification(self):
+        #
         # Identificação da NF-e
         #
         res = {}
-
-        fiscal_doc_ids = pool.get('l10n_br_account.fiscal.document').search(
-            cr, uid, [('code', '=', self.nfe.infNFe.ide.mod.valor)])
+        fiscal_doc_ids = self.env['l10n_br_account.fiscal.document'].search(
+            [('code', '=', self.nfe.infNFe.ide.mod.valor)])
 
         res['fiscal_document_id'] = \
-            fiscal_doc_ids[0] if fiscal_doc_ids else False
+            fiscal_doc_ids[0].id if fiscal_doc_ids else False
 
         res['vendor_serie'] = self.nfe.infNFe.ide.serie.valor
         res['number'] = self.nfe.infNFe.ide.nNF.valor
@@ -136,51 +125,48 @@ class NFe310(object):
         res['ind_pres'] = self.nfe.infNFe.ide.indPres.valor
         res['date_hour_invoice'] = self.nfe.infNFe.ide.dhEmi.valor
         res['nfe_version'] = '3.10'
-        return res
-
         res['type'] = 'in_invoice'  # Fixo por hora - apenas nota de entrada
         return res
 
-    def _get_in_out_adress(self, cr, uid, pool, context=None):
+    def _get_in_out_adress(self):
 
         if self.nfe.infNFe.ide.tpNF.valor == '0':
             cnpj = self._mask_cnpj_cpf(
-                True,
-                self.nfe.infNFe.retirada.CNPJ.valor)
+                True, self.nfe.infNFe.retirada.CNPJ.valor)
         else:
             cnpj = self._mask_cnpj_cpf(
-                True,
-                self.nfe.infNFe.entrega.CNPJ.valor)
+                True, self.nfe.infNFe.entrega.CNPJ.valor)
 
-        partner_ids = pool.get('res.partner').search(
-            cr, uid, [('cnpj_cpf', '=', cnpj)])
+        partner_ids = self.env['res.partner'].search(
+            [('cnpj_cpf', '=', cnpj)])
 
-        return {'partner_shipping_id': partner_ids[
-            0] if partner_ids else False}
+        return {
+            'partner_shipping_id': partner_ids[0].id if partner_ids else False
+        }
 
-    def _get_nfe_references(self, cr, uid, pool, context=None):
-
+    def _get_nfe_references(self):
         #
         # Documentos referenciadas
         #
         nfe_reference = {}
-        state_obj = pool.get('res.country.state')
-        fiscal_doc_obj = pool.get('l10n_br_account_product.fiscal.document')
+        state_obj = self.env['res.country.state']
+        fiscal_doc_obj = self.env['l10n_br_account.fiscal.document']
 
         if self.nfref.refNF.CNPJ.valor:
 
-            state_ids = state_obj.search(cr, uid, [
-                ('ibge_code', '=', self.nfref.refNF.cUF.valor)])
+            state_ids = state_obj.search(
+                [('ibge_code', '=', self.nfref.refNF.cUF.valor)])
 
-            fiscal_doc_ids = fiscal_doc_obj.search(cr, uid, [
-                ('code', '=', self.nfref.refNF.mod.valor)])
+            fiscal_doc_ids = fiscal_doc_obj.search(
+                [('code', '=', self.nfref.refNF.mod.valor)])
 
+            cnpj = self._mask_cnpj_cpf(True, self.nfref.refNF.CNPJ.valor)
             nfe_reference.update({
                 'document_type': 'nf',
-                'state_id': state_ids[0] if state_ids else False,
-                'date': self.nfref.refNF.AAMM.valor or False,
-                'cnpj_cpf': self._mask_cnpj_cpf(True, self.nfref.refNF.CNPJ.valor) or False,
-                'fiscal_document_id': fiscal_doc_ids[0] if fiscal_doc_ids
+                'state_id': state_ids[0].id if state_ids else False,
+                'date': datetime.strptime(self.nfref.refNF.AAMM.valor, '%y%m'),
+                'cnpj_cpf': cnpj or False,
+                'fiscal_document_id': fiscal_doc_ids[0].id if fiscal_doc_ids
                 else False,
                 'serie': self.nfref.refNF.serie.valor or False,
                 'internal_number': self.nfref.refNF.nNF.valor or False,
@@ -188,10 +174,10 @@ class NFe310(object):
 
         elif self.nfref.refNFP.CNPJ.valor:
 
-            state_ids = state_obj.search(cr, uid, [
-                ('ibge_code', '=', self.nfref.refNFP.cUF.valor)])
-            fiscal_doc_ids = fiscal_doc_obj.search(cr, uid, [
-                ('code', '=', self.nfref.refNFP.mod.valor)])
+            state_ids = state_obj.search(
+                [('ibge_code', '=', self.nfref.refNFP.cUF.valor)])
+            fiscal_doc_ids = fiscal_doc_obj.search(
+                [('code', '=', self.nfref.refNFP.mod.valor)])
 
             cnpj = self._mask_cnpj_cpf(True, self.nfref.refNFP.CNPJ.valor)
             cpf = self._mask_cnpj_cpf(False, self.nfref.refNFP.CPF.valor)
@@ -199,10 +185,11 @@ class NFe310(object):
 
             nfe_reference.update({
                 'document_type': 'nfrural',
-                'state_id': state_ids[0] if state_ids else False,
-                'date': self.nfref.refNFP.AAMM.valor,
+                'state_id': state_ids[0].id if state_ids else False,
+                'date': datetime.strptime(self.nfref.refNFP.AAMM.valor,
+                                          '%y%m'),
                 'inscr_est': self.nfref.refNFP.IE.valor,
-                'fiscal_document_id': fiscal_doc_ids[0] if fiscal_doc_ids
+                'fiscal_document_id': fiscal_doc_ids[0].id if fiscal_doc_ids
                 else False,
                 'serie': self.nfref.refNFP.serie.valor,
                 'internal_number': self.nfref.refNFP.nNF.valor,
@@ -220,12 +207,12 @@ class NFe310(object):
             })
         elif self.nfref.refECF:
             fiscal_document_ids = \
-                pool.get('l10n_br_account.fiscal.document').search(
-                    cr, uid, [('code', '=', self.nfref.refECF.mod.valor)])
+                self.env['l10n_br_account.fiscal.document'].search(
+                    [('code', '=', self.nfref.refECF.mod.valor)])
 
             nfe_reference.update({
                 'document_type': 'cf',
-                'fiscal_document_id': fiscal_document_ids[0] if
+                'fiscal_document_id': fiscal_document_ids[0].id if
                 fiscal_document_ids else False,
                 'serie': self.nfref.refNF.serie.valor,
                 'internal_number': self.nfref.refNF.nNF.valor,
@@ -233,25 +220,23 @@ class NFe310(object):
 
         return nfe_reference
 
-    def _get_emmiter(self, cr, uid, pool, context=None):
+    def _get_emmiter(self):
         #
         # Emitente da nota é o fornecedor
         #
         # TODO - Tratar mascara do ZIP e Inscricao Estadual
         emitter = {}
-
         cnpj_cpf = ''
 
         if self.nfe.infNFe.emit.CNPJ.valor:
             cnpj_cpf = self._mask_cnpj_cpf(
-                True,
-                self.nfe.infNFe.emit.CNPJ.valor)
+                True, self.nfe.infNFe.emit.CNPJ.valor)
 
         elif self.nfe.infNFe.emit.CPF.valor:
-            cnpj_cpf = self._mask_cnpj_cpf(False,
-                                           self.nfe.infNFe.emit.CPF.valor)
-        receiver_partner_ids = pool.get('res.partner').search(
-            cr, uid, [('cnpj_cpf', '=', cnpj_cpf)])
+            cnpj_cpf = self._mask_cnpj_cpf(
+                False, self.nfe.infNFe.emit.CPF.valor)
+        receiver_partner_ids = self.env['res.partner'].search(
+            [('cnpj_cpf', '=', cnpj_cpf)])
 
         # Quando o cliente é estrangeiro, ele nao possui cnpj. Por isso
         # realizamos a busca usando como chave de busca o nome da empresa ou
@@ -260,23 +245,19 @@ class NFe310(object):
             aux = ['|',
                    ('name', '=', self.nfe.infNFe.emit.xFant.valor),
                    ('legal_name', '=', self.nfe.infNFe.emit.xNome.valor)]
-            receiver_partner_ids = pool.get('res.partner').search(
-                cr, uid, aux)
+            receiver_partner_ids = self.env['res.partner'].search(aux)
 
         if len(receiver_partner_ids) > 0:
-            emitter['partner_id'] = receiver_partner_ids[0]
-            partner = pool.get('res.partner').browse(
-                cr,
-                uid,
-                receiver_partner_ids[0])
+            emitter['partner_id'] = receiver_partner_ids[0].id
+            partner = receiver_partner_ids[0]
             # Busca conta de pagamento do fornecedor
             emitter['account_id'] = partner.property_account_payable.id
         else:  # Retorna os dados para cadastro posteriormente
             partner = {}
 
             partner['is_company'] = True
-            partner[
-                'name'] = self.nfe.infNFe.emit.xFant.valor or self.nfe.infNFe.emit.xNome.valor
+            partner['name'] = self.nfe.infNFe.emit.xFant.valor or \
+                self.nfe.infNFe.emit.xNome.valor
             partner['legal_name'] = self.nfe.infNFe.emit.xNome.valor
             partner['cnpj_cpf'] = cnpj_cpf
             partner['inscr_est'] = self.nfe.infNFe.emit.IE.valor
@@ -287,17 +268,16 @@ class NFe310(object):
             partner['district'] = self.nfe.infNFe.emit.enderEmit.xBairro.valor
             partner['number'] = self.nfe.infNFe.emit.enderEmit.nro.valor
 
-            city_id = pool.get('l10n_br_base.city').search(
-                cr, uid, [('ibge_code', '=', str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[2:]),
-                          ('state_id.ibge_code', '=', str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[0:2])])
+            city_id = self.env['l10n_br_base.city'].search(
+                [('ibge_code', '=',
+                    str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[2:]),
+                 ('state_id.ibge_code', '=',
+                    str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[0:2])])
+
             if len(city_id) > 0:
-                city = pool.get('l10n_br_base.city').browse(
-                    cr,
-                    uid,
-                    city_id[0])
-                partner['l10n_br_city_id'] = city_id[0]
-                partner['state_id'] = city.state_id.id
-                partner['country_id'] = city.state_id.country_id.id
+                partner['l10n_br_city_id'] = city_id[0].id
+                partner['state_id'] = city_id[0].state_id.id
+                partner['country_id'] = city_id[0].state_id.country_id.id
 
             partner['phone'] = self.nfe.infNFe.emit.enderEmit.fone.valor
             partner['supplier'] = True
@@ -308,56 +288,46 @@ class NFe310(object):
 
         return emitter
 
-    def _get_receiver(self, cr, uid, pool, context=None):
+    def _get_receiver(self):
         #
         # Recebedor da mercadoria é a empresa
         #
         receiver = {}
-        partner_obj = pool.get('res.partner')
-        company_obj = pool.get('res.company')
         cnpj = self._mask_cnpj_cpf(True, self.nfe.infNFe.dest.CNPJ.valor)
 
-        emitter_partner_ids = partner_obj.search(
-            cr, uid, [('cnpj_cpf', '=', cnpj)])
+        company_ids = self.env['res.company'].search(
+            [('partner_id.cnpj_cpf', '=', cnpj)])
+        if len(company_ids) > 0:
+            receiver['company_id'] = company_ids[0].id
+            return receiver
 
-        if len(emitter_partner_ids) > 0:
-            company_ids = company_obj.search(
-                cr, uid, [('partner_id', '=', emitter_partner_ids[0])])
-            if len(company_ids) > 0:
-                receiver['company_id'] = company_ids[0]
-                return receiver
+        raise Exception(u'O xml a ser importado foi emitido para o CNPJ {0}'
+                        u' - {1}\no qual não corresponde ao CNPJ cadastrado'
+                        u' na empresa\nO arquivo não será importado.'.format(
+                            cnpj, self.nfe.infNFe.dest.xNome.valor))
 
-        raise Exception(u'O xml a ser importado foi emitido para o CNPJ {0} - {1}\n'
-                        u'o qual não corresponde ao CNPJ cadastrado na empresa\n'
-                        u'O arquivo não será importado.'.format(cnpj, self.nfe.infNFe.dest.xNome.valor))
-
-    def _get_details(self, cr, uid, pool, context=None):
+    def _get_details(self):
         #
         # Detalhes
         #
-        # Importamos dados da invoice line
         inv_line = {}
 
-        product_ids = pool.get('product.product').search(
-            cr, uid, [('default_code', '=', self.det.prod.cProd.valor)])
+        product_ids = self.env['product.product'].search(
+            [('default_code', '=', self.det.prod.cProd.valor)])
         if len(product_ids) == 0:
-            product_ids = pool.get('product.product').search(
-                cr, uid, [('ean13', '=', self.det.prod.cEAN.valor)])
+            product_ids = self.env['product.product'].search(
+                [('ean13', '=', self.det.prod.cEAN.valor)])
         if len(product_ids) == 0:
             cnpj_cpf = self._mask_cnpj_cpf(
-                True,
-                self.nfe.infNFe.emit.CNPJ.valor)
-            supplierinfo_ids = pool.get('product.supplierinfo').search(
-                cr, uid, ['|', ('name.cnpj_cpf', '=', cnpj_cpf),
-                          ('name.cnpj_cpf',
-                           '=',
-                           self.nfe.infNFe.emit.CNPJ.valor),
-                          ('product_code', '=', self.det.prod.cProd.valor)])
+                True, self.nfe.infNFe.emit.CNPJ.valor)
+            supplierinfo_ids = self.env['product.supplierinfo'].search(
+                ['|', ('name.cnpj_cpf', '=', cnpj_cpf),
+                 ('name.cnpj_cpf',
+                  '=',
+                  self.nfe.infNFe.emit.CNPJ.valor),
+                 ('product_code', '=', self.det.prod.cProd.valor)])
             if len(supplierinfo_ids) > 0:
-                supplier_info = pool.get('product.supplierinfo').browse(
-                    cr,
-                    uid,
-                    supplierinfo_ids[0])
+                supplier_info = supplierinfo_ids[0]
                 inv_line['product_id'] = supplier_info.product_tmpl_id\
                     .product_variant_ids[0].id
                 inv_line['name'] = supplier_info.product_tmpl_id\
@@ -366,43 +336,37 @@ class NFe310(object):
                 inv_line['product_id'] = False
                 inv_line['name'] = ''
         else:
-            product_info = pool.get('product.product').browse(
-                cr,
-                uid,
-                product_ids[0])
-            inv_line['product_id'] = product_ids[0] if product_ids else False
-            inv_line['name'] = product_info.name
+            inv_line['product_id'] = product_ids[
+                0].id if product_ids else False
+            inv_line['name'] = product_ids[0].name
 
         inv_line['product_code_xml'] = self.det.prod.cProd.valor
         inv_line['product_name_xml'] = self.det.prod.xProd.valor
 
         ncm = self.det.prod.NCM.valor
         ncm = ncm[:4] + '.' + ncm[4:6] + '.' + ncm[6:]
-        fc_id = pool.get('account.product.fiscal.classification').search(
-            cr, uid, [('name', '=', ncm)]
+        fc_id = self.env['account.product.fiscal.classification'].search(
+            [('name', '=', ncm)]
         )
 
-        inv_line['fiscal_classification_id'] = fc_id[
-            0] if len(fc_id) > 0 else False
+        inv_line['fiscal_classification_id'] = fc_id[0].id if len(fc_id) > 0 \
+            else False
 
-        cfop_ids = pool.get('l10n_br_account_product.cfop').search(
-            cr, uid, [('code', '=', self.det.prod.CFOP.valor)])
+        cfop_ids = self.env['l10n_br_account_product.cfop'].search(
+            [('code', '=', self.det.prod.CFOP.valor)])
 
         inv_line['cfop_xml'] = self.det.prod.CFOP.valor
-        inv_line['cfop_id'] = cfop_ids[0] if len(cfop_ids) > 0 else False
+        inv_line['cfop_id'] = cfop_ids[0].id if len(cfop_ids) > 0 else False
 
-        uom_ids = pool.get('product.uom').search(
-            cr, uid, [('name', '=ilike', self.det.prod.uCom.valor)],
-            context=context)
+        uom_ids = self.env['product.uom'].search(
+            [('name', '=ilike', self.det.prod.uCom.valor)])
 
         inv_line['ncm_xml'] = ncm
         inv_line['ean_xml'] = self.det.prod.cEAN.valor
         inv_line['uom_xml'] = self.det.prod.uCom.valor
-        inv_line['uos_id'] = uom_ids[0] if len(uom_ids) > 0 else False
+        inv_line['uos_id'] = uom_ids[0].id if len(uom_ids) > 0 else False
         if not inv_line['uos_id'] and inv_line['product_id']:
-            product = pool['product.product'].browse(
-                cr,
-                uid,
+            product = self.env['product.product'].browse(
                 inv_line['product_id'])
             inv_line['uos_id'] = product.uom_id.id
         inv_line['quantity'] = float(self.det.prod.qCom.valor)
@@ -418,12 +382,11 @@ class NFe310(object):
         if not self.det.imposto.ISSQN.cListServ.valor:
             inv_line['icms_origin'] = str(self.det.imposto.ICMS.orig.valor)
 
-            icms_cst_ids = pool.get('account.tax.code').search(
-                cr, uid, [('code', '=', self.det.imposto.ICMS.CST.valor),
-                          ('domain', '=', 'icms')])
+            icms_ids = self.env['account.tax.code'].search(
+                [('code', '=', self.det.imposto.ICMS.CST.valor),
+                 ('domain', '=', 'icms')])
 
-            inv_line['icms_cst_id'] = icms_cst_ids[
-                0] if icms_cst_ids else False
+            inv_line['icms_cst_id'] = icms_ids[0].id if icms_ids else False
             inv_line['icms_percent'] = self.det.imposto.ICMS.pCredSN.valor
             inv_line['icms_value'] = self.det.imposto.ICMS.vCredICMSSN.valor
 
@@ -440,8 +403,8 @@ class NFe310(object):
             inv_line['icms_st_base_type'] = str(
                 self.det.imposto.ICMS.modBCST.valor)
             inv_line['icms_st_mva'] = self.det.imposto.ICMS.pMVAST.valor
-            inv_line[
-                'icms_st_percent_reduction'] = self.det.imposto.ICMS.pRedBCST.valor
+            inv_line['icms_st_percent_reduction'] = \
+                self.det.imposto.ICMS.pRedBCST.valor
             inv_line['icms_st_base'] = self.det.imposto.ICMS.vBCST.valor
             inv_line['icms_st_percent'] = self.det.imposto.ICMS.pICMSST.valor
             inv_line['icms_st_value'] = self.det.imposto.ICMS.vICMSST.valor
@@ -449,27 +412,26 @@ class NFe310(object):
             #
             # # IPI
             #
-            ipi_cst_ids = pool.get('account.tax.code').search(
-                cr, uid, [('code', '=', self.det.imposto.IPI.CST.valor),
-                          ('domain', '=', 'ipi')])
-            if self.det.imposto.IPI.vBC.valor and self.det.imposto.IPI.pIPI.valor:
+            ipi_ids = self.env['account.tax.code'].search(
+                [('code', '=', self.det.imposto.IPI.CST.valor),
+                 ('domain', '=', 'ipi')])
+            if self.det.imposto.IPI.vBC.valor and \
+                    self.det.imposto.IPI.pIPI.valor:
                 inv_line['ipi_type'] = 'percent'
                 inv_line['ipi_base'] = self.det.imposto.IPI.vBC.valor
                 inv_line['ipi_percent'] = self.det.imposto.IPI.pIPI.valor
-                inv_line['ipi_cst_id'] = ipi_cst_ids[
-                    0] if ipi_cst_ids else False
+                inv_line['ipi_cst_id'] = ipi_ids[0].id if ipi_ids else False
 
             elif self.det.imposto.IPI.qUnid.valor and \
                     self.det.imposto.IPI.vUnid.valor:
                 inv_line['ipi_percent'] = self.det.imposto.IPI.vUnid.valor
 
             else:
-                ipi_cst_ids = pool.get('account.tax.code').search(
-                    cr, uid, [('code', '=', '49'),
-                              ('domain', '=', 'ipi')])
+                ipi_ids = self.env['account.tax.code'].search(
+                    [('code', '=', '49'),
+                     ('domain', '=', 'ipi')])
                 inv_line['ipi_type'] = 'percent'
-                inv_line['ipi_cst_id'] = ipi_cst_ids[
-                    0] if ipi_cst_ids else False
+                inv_line['ipi_cst_id'] = ipi_ids[0] if ipi_ids else False
 
             inv_line['ipi_value'] = self.det.imposto.IPI.vIPI.valor
 
@@ -483,10 +445,11 @@ class NFe310(object):
             inv_line['issqn_type'] = self.det.imposto.ISSQN.cSitTrib.valor
 
         # PIS
-        pis_cst_ids = pool.get('account.tax.code').search(
-            cr, uid, [('code', '=', self.det.imposto.PIS.CST.valor), ('domain', '=', 'pis')])
+        pis_cst_ids = self.env['account.tax.code'].search(
+            [('code', '=', self.det.imposto.PIS.CST.valor),
+             ('domain', '=', 'pis')])
 
-        inv_line['pis_cst_id'] = pis_cst_ids[0] if pis_cst_ids else False
+        inv_line['pis_cst_id'] = pis_cst_ids[0].id if pis_cst_ids else False
         inv_line['pis_base'] = self.det.imposto.PIS.vBC.valor
         inv_line['pis_percent'] = self.det.imposto.PIS.pPIS.valor
         inv_line['pis_value'] = self.det.imposto.PIS.vPIS.valor
@@ -497,11 +460,12 @@ class NFe310(object):
         inv_line['pis_st_value'] = self.det.imposto.PISST.vPIS.valor
 
         # COFINS
-        cofins_cst_ids = pool.get('account.tax.code').search(
-            cr, uid, [('code', '=', self.det.imposto.COFINS.CST.valor), ('domain', '=', 'cofins')])
+        cofins_cst_ids = self.env['account.tax.code'].search(
+            [('code', '=', self.det.imposto.COFINS.CST.valor),
+             ('domain', '=', 'cofins')])
 
         inv_line['cofins_cst_id'] = \
-            cofins_cst_ids[0] if cofins_cst_ids else False
+            cofins_cst_ids[0].id if cofins_cst_ids else False
         inv_line['cofins_base'] = self.det.imposto.COFINS.vBC.valor
         inv_line['cofins_percent'] = self.det.imposto.COFINS.pCOFINS.valor
         inv_line['cofins_value'] = self.det.imposto.COFINS.vCOFINS.valor
@@ -513,24 +477,21 @@ class NFe310(object):
 
         return [(0, 0, inv_line)]
 
-    def _get_di(self, cr, uid, pool, i, context=None):
-
-        state_ids = pool.search(
-            cr, uid, [('code', '=', self.di.UFDesemb.valor)])
+    def _get_di(self, inv_line):
+        state_ids = self.env['res.country.state'].search(
+            [('code', '=', self.di.UFDesemb.valor)])
 
         di = {
             'name': self.di.nDI.valor,
             'date_registration': self.di.dDI.valor,
             'location': self.di.xLocDesemb.valor,
-            'state_id': state_ids[0] if state_ids else False,
-            # self.di.UFDesemb.valor = inv_di.state_id.code or ''
+            'state_id': state_ids[0].id if state_ids else False,
             'date_release': self.di.dDesemb.valor,
             'exporting_code': self.di.cExportador.valor
         }
         return di
 
-    def _get_addition(
-            self, cr, uid, ids, inv, inv_line, inv_di, inv_di_line, i, context=None):
+    def _get_addition(self, inv_line, inv_di, inv_di_line):
         addition = {
             'name': self.di_line.nAdicao.valor,
             'sequence': self.di_line.nSeqAdic.valor,
@@ -539,47 +500,15 @@ class NFe310(object):
         }
         return addition
 
-    def _get_encashment_data(self, cr, uid, pool, context=None):
-
+    def _get_encashment_data(self):
         #
-        # Dados de Cobrança
+        # Dados de Cobrança  #TODO
         #
-
-        # Realizamos a busca da move line a partir do nome da mesma
-        # account_move_line_ids = pool.get('account.move.line').search(
-        #     cr, uid, [('name', '=', self.dup.nDup.valor)])
-        #
-        # if not account_move_line_ids:
-        #     # Se nao encontrarmos a move line, nos devemos cria-la
-        #     vals = {
-        #         'name': self.dup.nDup.valor,
-        #         'date_maturity': self.dup.dVenc.valor,
-        #         'debit': self.dup.vDup.valor,
-        #         # 'journal_id': 1,
-        #     }
-        #
-        #     # Inserimos em um lista para que account_move_line_ids continue
-        #     # representando uma lista
-        #     context['journal_id'] = 1
-        #     context['period_id'] = 1
-        #     account_move_line_ids = [pool.get('account.move.line').create(
-        #         cr, uid, vals, context=context)]
-        #
-        # encashment_data = {
-        #     'move_line_receivable_id': account_move_line_ids[0] if
-        #     account_move_line_ids else False,
-        #     'date_due': self.dup.dVenc.valor,
-        # }
-
-        # Nao conseguimos obter todos os campos necessarios para criacao
-        # do account.move.line
         encashment_data = {}
         return encashment_data
 
-    def _get_carrier_data(self, cr, uid, pool, context=None):
-
+    def _get_carrier_data(self):
         res = {}
-
         cnpj_cpf = ''
 
         # Realizamos a importacao da transportadora
@@ -591,30 +520,30 @@ class NFe310(object):
             cnpj_cpf = self.nfe.infNFe.transp.transporta.CPF.valor
             cnpj_cpf = self._mask_cnpj_cpf(False, cnpj_cpf)
 
-        carrier_ids = pool.get('delivery.carrier').search(
-            cr, uid, [('partner_id.cnpj_cpf', '=', cnpj_cpf)])
+        carrier_ids = self.env['delivery.carrier'].search(
+            [('partner_id.cnpj_cpf', '=', cnpj_cpf)])
 
         # Realizamos a busca do veiculo pelo numero da placa
         placa = self.nfe.infNFe.transp.veicTransp.placa.valor
 
-        vehicle_ids = pool.get('l10n_br_delivery.carrier.vehicle').search(
-            cr, uid, [('plate', '=', placa)])
+        vehicle_ids = self.env['l10n_br_delivery.carrier.vehicle'].search(
+            [('plate', '=', placa)])
 
         # Ao encontrarmos o carrier com o partner especificado, basta
         # retornarmos seu id que o restantes dos dados vem junto
-        res['carrier_id'] = carrier_ids[0] if carrier_ids else False
-        res['vehicle_id'] = vehicle_ids[0] if vehicle_ids else False
+        res['carrier_id'] = carrier_ids[0].id if carrier_ids else False
+        res['vehicle_id'] = vehicle_ids[0].id if vehicle_ids else False
 
         res['carrier_name'] = self.nfe.infNFe.transp.transporta.xNome.valor
         res['vehicle_plate'] = self.nfe.infNFe.transp.veicTransp.placa.valor
 
-        states = pool.get('res.country.state').search(
-            cr, uid, [('code', '=', self.nfe.infNFe.transp.veicTransp.UF.valor),
-                      ('country_id', '=', 32)])
-        res['vehicle_state_id'] = states[0] if states else False
+        states = self.env['res.country.state'].search(
+            [('code', '=', self.nfe.infNFe.transp.veicTransp.UF.valor),
+             ('country_id', '=', 32)])
+        res['vehicle_state_id'] = states[0].id if states else False
         return res
 
-    def _get_weight_data(self, cr, uid, pool, context=None):
+    def _get_weight_data(self):
         #
         # Campos do Transporte da NF-e Bloco 381
         #
@@ -623,14 +552,15 @@ class NFe310(object):
                 'number_of_packages': self.nfe.infNFe.transp.vol[0].qVol.valor,
                 'kind_of_packages': self.nfe.infNFe.transp.vol[0].esp.valor,
                 'brand_of_packages': self.nfe.infNFe.transp.vol[0].marca.valor,
-                'notation_of_packages': self.nfe.infNFe.transp.vol[0].nVol.valor,
+                'notation_of_packages':
+                self.nfe.infNFe.transp.vol[0].nVol.valor,
                 'weight': self.nfe.infNFe.transp.vol[0].pesoL.valor,
                 'weight_net': self.nfe.infNFe.transp.vol[0].pesoB.valor
             }
             return weight_data
         return {}
 
-    def _get_additional_information(self, cr, uid, pool, context=None):
+    def _get_additional_information(self):
 
         #
         # Informações adicionais
@@ -641,7 +571,7 @@ class NFe310(object):
         }
         return additional_information
 
-    def _get_total(self, cr, uid, context=None):
+    def _get_total(self):
         #
         # Totais
         #
@@ -663,9 +593,10 @@ class NFe310(object):
         }
         return total
 
-    def _get_protocol(self, cr, uid, pool, context=None):
+    def _get_protocol(self):
         protocol = {
-            'nfe_status': self.protNFe.infProt.cStat.valor + ' - ' + self.protNFe.infProt.xMotivo.valor,
+            'nfe_status': self.protNFe.infProt.cStat.valor + ' - ' +
+            self.protNFe.infProt.xMotivo.valor,
             'nfe_protocol_number': self.protNFe.infProt.nProt.valor,
             'nfe_date': self.protNFe.infProt.dhRecbto.valor,
         }
@@ -742,29 +673,23 @@ class NFe310(object):
 
         return Dup_310()
 
-    def get_xml(self, cr, uid, ids, nfe_environment, context=None):
-        """"""
-        result = []
-        for nfe in self._serializer(cr, uid, ids, nfe_environment, context):
-            result.append({'key': nfe.infNFe.Id.valor, 'nfe': nfe.get_xml()})
-        return result
-
-    def parse_edoc(self, filebuffer, ftype):
+    def parse_edoc(self, filebuffer):
         filebuffer = base64.standard_b64decode(filebuffer)
         edoc_file = tempfile.NamedTemporaryFile()
         edoc_file.write(filebuffer)
         edoc_file.flush()
 
         nfe = self.get_NFe()
-        nfe.set_xml(nfe_string)
+        nfe.set_xml(edoc_file.name)
 
         return [nfe]
 
-    def import_edoc(self, cr, uid, filebuffer, ftype, context):
-        edocs = self.parse_edoc(filebuffer, ftype)
+    def import_edoc(self, environment, filebuffer):
+        self.env = environment
+        edocs = self.parse_edoc(filebuffer)
         result = []
         for edoc in edocs:
-            docid, docaction = self._deserializer(cr, uid, edoc, context)
+            docid, docaction = self.deserialize(edoc)
             result.append({
                 'values': docid,
                 'action': docaction
@@ -782,4 +707,12 @@ class NFe310(object):
                 cnpj_cpf = "%s.%s.%s-%s" % (val[0:3], val[3:6], val[6:9],
                                             val[9:11])
 
+        return cnpj_cpf
+
+    @staticmethod
+    def _mask_zip(zip):
+        if zip:
+            zip = re.sub('[^0-9]', '', zip)
+            if len(zip) == 8:
+                zip = "%s-%s" % (zip[0:4], zip[4:7])
         return cnpj_cpf

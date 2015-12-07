@@ -30,7 +30,7 @@ from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
 from openerp.exceptions import Warning
 
-from .service.nfe_serializer import NFeSerializer
+from ..service.nfe_serializer import NFeSerializer
 
 
 _logger = logging.getLogger(__name__)
@@ -75,8 +75,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             ftype = self._check_extension(importer.file_name)
 
             nfe_serializer = NFeSerializer()
-            eDoc = nfe_serializer.import_edoc(
-                self._cr, self._uid, importer.edoc_input, ftype, context)[0]
+            eDoc = nfe_serializer.import_edoc(self.env, importer.edoc_input)[0]
 
             inv_values = eDoc['values']
             if importer.create_partner and inv_values['partner_id'] == False:
@@ -154,7 +153,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             raise Warning(
                 u'Erro ao tentar importar o xml\n'
                 u'Mensagem de erro:\n{0}'.format(
-                    e.message.encode('utf-8', 'ignore')))
+                    e.message.decode('utf-8', 'ignore')))
 
     @api.multi
     def done(self, cr, uid, ids, context=False):
