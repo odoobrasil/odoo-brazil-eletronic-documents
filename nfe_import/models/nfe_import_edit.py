@@ -23,6 +23,7 @@ import cPickle
 from openerp import api, fields, models
 from openerp.tools.translate import _
 from openerp.exceptions import Warning
+from openerp.addons.product.product import check_ean
 
 
 class NfeImportEdit(models.TransientModel):
@@ -103,6 +104,7 @@ class NfeImportEdit(models.TransientModel):
                     item.uom_id = product_created.uom_id
 
                     line[2]['product_id'] = product_created.id
+                    line[2]['uos_id'] = product_created.uom_id.id
 
                 self.env['product.supplierinfo'].create(
                     {'name': self.supplier_id.id,
@@ -150,7 +152,6 @@ class NfeImportEdit(models.TransientModel):
                 'fiscal_type': 'product',
                 'ncm_id': line[2]['fiscal_classification_id'],
                 'default_code': line[2]['product_code_xml'],
-                'ean13': line[2]['ean_xml'],
                 }
 
         if check_ean(line[2]['ean_xml']):
