@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015 TrustCode - www.trustcode.com.br                         #
@@ -20,5 +20,27 @@
 ###############################################################################
 
 
-from . import nfe_import_edit
-from . import nfe_import_mapping
+from openerp import api, fields, models
+
+
+class NfeImportCfopMapping(models.Model):
+    _name = 'nfe.import.cfop.mapping'
+    
+    cfop_origin_id = fields.Many2one('l10n_br_account_product.cfop', 
+                                     u'CFOP de Origem')
+    
+    cfop_dest_id = fields.Many2one('l10n_br_account_product.cfop', 
+                                     u'CFOP de Destino')
+    
+    
+class NfeImportCSTMapping(models.Model):    
+    _name = 'nfe.import.cst.mapping'
+    
+    
+    cst_origin_id = fields.Many2one('account.tax.code',
+                                    u'CST de Origem')
+    
+    cst_dest_id = fields.Many2one('account.tax.code',
+                                    u'CST de Destino')
+    
+    

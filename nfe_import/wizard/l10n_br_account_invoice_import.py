@@ -98,7 +98,20 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 inv_line[2][
                     'fiscal_category_id'] = importer.fiscal_category_id.id
                 inv_line[2]['fiscal_position'] = importer.fiscal_position.id
-                inv_line[2]['cfop_id'] = importer.fiscal_position.cfop_id.id
+
+                cfop_map = self.env['nfe.import.cfop.mapping'].search(
+                    [('cfop_origin_id.code', '=', inv_line[2]['cfop_xml'])])
+
+                if cfop_map:
+                    inv_line[2]['cfop_id'] = cfop_map.cfop_dest_id.id
+                else:
+                    cfop_orig = inv_line[2]['cfop_xml']
+                    cfop_dest = cfop_orig - 4000 \
+                        if cfop_orig > 4000 else cfop_orig
+                    cfop_dest_id = self.env['l10n_br_account_product.cfop'].\
+                        search([('code', '=', cfop_dest)])
+
+                    inv_line[2]['cfop_id'] = cfop_dest_id.id
 
                 product_import_ids.append(
                     (0, 0,

@@ -35,6 +35,11 @@ class NfeImportEdit(models.TransientModel):
                  u"Editando NF-e ({0})".format(
                      rec.number)) for rec in self]
 
+    @api.multi
+    def _default_category(self):
+        return self.env['ir.model.data'].get_object_reference(
+            'product', 'product_category_all')[1]
+
     xml_data = fields.Char(string="Xml Data", size=200000, readonly=True)
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')
@@ -60,6 +65,10 @@ class NfeImportEdit(models.TransientModel):
     create_product = fields.Boolean(
         u'Criar produtos automaticamente?', default=True,
         help=u'Cria o produto automaticamente caso não seja informado um')
+
+    product_category_id = fields.Many2one('product.category',
+                                          u'Categoria Produto',
+                                          default=_default_category)
 
     @api.model
     def create(self, values):
@@ -99,7 +108,7 @@ class NfeImportEdit(models.TransientModel):
                 if self.create_product:
 
                     product_created = self.product_create(
-                        inv_values, line, item)
+                        inv_values, line, item, self.product_category_id)
                     item.product_id = product_created
                     item.uom_id = product_created.uom_id
 
@@ -135,7 +144,8 @@ class NfeImportEdit(models.TransientModel):
         return res
 
     @api.multi
-    def product_create(self, inv_values, line, item_grid):
+    def product_create(
+            self, inv_values, line, item_grid, default_category=None):
         if not line[2]['fiscal_classification_id']:
             fc_env = self.env['account.product.fiscal.classification']
             ncm = fc_env.search([('name', '=', line[2]['ncm_xml'])], limit=1)
@@ -153,6 +163,9 @@ class NfeImportEdit(models.TransientModel):
                 'ncm_id': line[2]['fiscal_classification_id'],
                 'default_code': line[2]['product_code_xml'],
                 }
+
+        if default_category:
+            vals['categ_id'] = default_category.id
 
         if check_ean(line[2]['ean_xml']):
             vals['ean13'] = line[2]['ean_xml']
