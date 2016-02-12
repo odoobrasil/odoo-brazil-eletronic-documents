@@ -43,19 +43,26 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
     _name = 'nfe_import.account_invoice_import'
     _description = 'Import Eletronic Document in TXT and XML format'
 
+    state = fields.Selection([('init', 'init'), ('done', 'done')],
+                             string='state', readonly=True, default='init')
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')
     file_name = fields.Char('File Name', size=128)
     create_partner = fields.Boolean(
         u'Criar fornecedor automaticamente?', default=True,
         help=u'Cria o fornecedor automaticamente caso não esteja cadastrado')
-    state = fields.Selection([('init', 'init'), ('done', 'done')],
-                             string='state', readonly=True, default='init')
+    purchase_order_id = fields.Many2one('purchase.order',
+                                        u'Pedido de Compra')
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal')
     fiscal_position = fields.Many2one(
         'account.fiscal.position', 'Posição Fiscal',
         domain="[('fiscal_category_id','=',fiscal_category_id)]")
+
+    @api.onchange('purchase_order_id')
+    def onchange_purchase_order(self):
+        self.fiscal_category_id = self.purchase_order_id.fiscal_category_id.id
+        self.fiscal_position = self.purchase_order_id.fiscal_position.id    
 
     def _check_extension(self, filename):
         (__, ftype) = os.path.splitext(filename)
