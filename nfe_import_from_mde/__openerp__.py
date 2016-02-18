@@ -24,7 +24,7 @@
     'category': 'NFE',
     'description': """Integra os módulos de importação do xml e
         manifesto de destinatário""",
-    'author': 'Danimar Ribeiro - TrustCode',
+    'author': 'Danimar Ribeiro - Trustcode',
     'license': 'AGPL-3',
     'website': 'http://www.trustcode.com.br',
     'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
