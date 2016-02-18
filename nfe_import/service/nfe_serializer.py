@@ -522,13 +522,16 @@ class NFeSerializer(object):
         # Realizamos a busca do veiculo pelo numero da placa
         placa = self.nfe.infNFe.transp.veicTransp.placa.valor
 
-        vehicle_ids = self.env['l10n_br_delivery.carrier.vehicle'].search(
-            [('plate', '=', placa)])
+        try:
+            vehicle_ids = self.env['l10n_br_delivery.carrier.vehicle'].search(
+                [('plate', '=', placa)])
 
-        # Ao encontrarmos o carrier com o partner especificado, basta
-        # retornarmos seu id que o restantes dos dados vem junto
-        res['carrier_id'] = carrier_ids[0].id if carrier_ids else False
-        res['vehicle_id'] = vehicle_ids[0].id if vehicle_ids else False
+            # Ao encontrarmos o carrier com o partner especificado, basta
+            # retornarmos seu id que o restantes dos dados vem junto
+            res['carrier_id'] = carrier_ids[0].id if carrier_ids else False
+            res['vehicle_id'] = vehicle_ids[0].id if vehicle_ids else False
+        except: # Não vamos adicionar dependência ao l10n_br_delivery, se der erro deixa passar.
+            pass
 
         res['carrier_name'] = self.nfe.infNFe.transp.transporta.xNome.valor
         res['vehicle_plate'] = self.nfe.infNFe.transp.veicTransp.placa.valor

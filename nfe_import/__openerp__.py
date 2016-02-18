@@ -26,8 +26,8 @@
     'version': '8.0.1.0.0',
     'category': 'Account addons',
     'license': 'AGPL-3',
-    'author': 'KMEE, TrustCode',
-    'website': 'http://www.kmee.com.br',
+    'author': 'Trustcode, KMEE',
+    'website': 'http://github.com/odoo-brazil',
     'external_dependencies': {
         'python': ['pysped'],
     },
