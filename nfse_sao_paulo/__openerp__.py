@@ -22,20 +22,22 @@
 
 {
     'name': 'NFS-e São Paulo',
-    'summary': """Módulo que implementa o Layout da cidade de São Paulo                
+    'summary': """Módulo que implementa o Layout da cidade de São Paulo
                 Depends: base_nfse, suds, suds_requests""",
     'version': '8.0',
     'category': 'Localisation',
     'author': 'Trustcode',
     'license': 'AGPL-3',
     'website': 'http://www.trustcode.com.br',
-    'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',                     
+    'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
+                     'Carlos Silveira <crsilveira@gmail.com>',
                      ],
     'depends': [
         'base_nfse'
     ],
     'data': [
-        'report/danfse.xml',        
+        'report/danfse.xml',
+        'views/account_invoice_view.xml'
     ],
     'instalable': True
 }
