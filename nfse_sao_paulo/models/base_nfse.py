@@ -26,8 +26,6 @@ import hashlib
 import urllib2, httplib, socket
 import logging
 import suds
-#TODO - REMOVER
-import json
 from lxml import etree
 from datetime import datetime
 from openerp import api, fields, models, tools
@@ -38,46 +36,37 @@ from suds.plugin import MessagePlugin
 from openerp.addons.base_nfse.service.xml import render
 from openerp.addons.base_nfse.service.signature import Assinatura
 
-from assinatura import AssinaturaA1
 logging.getLogger('suds.client').setLevel(logging.CRITICAL)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('suds.transport').setLevel(logging.DEBUG)
 
-class EnvelopeFixer(MessagePlugin): 
+class EnvelopeFixer(MessagePlugin):
 
     def sending(self, context):
         # removendo prefixo
         context.envelope = re.sub( 'ns[0-9]:', '', context.envelope )
         context.envelope = re.sub( '<SOAP-ENV:Header/>', '', str(context.envelope) )
-        context.envelope = re.sub( '<VersaoSchema>', '', str(context.envelope) )
-        context.envelope = re.sub( '</VersaoSchema>', '', str(context.envelope) )
-        context.envelope = re.sub( '<?xml version="1.0"?>', '', str(context.envelope) )
-        #context.envelope = re.sub( '</ConsultaCNPJRequest>', '', str(context.envelope) )
+        context.envelope = re.sub( '</VersaoSchema>', '</MensagemXML>', str(context.envelope) )
+        context.envelope = re.sub( '<VersaoSchema>', '<VersaoSchema>1</VersaoSchema><MensagemXML>', str(context.envelope) )
         return context.envelope
 
-    def marshalled(self, context): 
+    def marshalled(self, context):
         #print context.envelope.str()
-        #import pudb;pu.db
-        envelope = context.envelope    
+        envelope = context.envelope
         envelope.name = 'Envelope'
         envelope.setPrefix('soap12')
         envelope.nsprefixes = {
-           'xsi' : 'http://www.w3.org/2001/XMLSchema-instance', 
+           'xsi' : 'http://www.w3.org/2001/XMLSchema-instance',
            'soap12': 'http://www.w3.org/2003/05/soap-envelope',
            'xsd' : 'http://www.w3.org/2001/XMLSchema'
-           
+
         }
-        env1 = envelope.getRoot()
-        
-        consulta = envelope.getChildren()[1][0]                                                                             
-        consulta.set("xmlns", "http://www.prefeitura.sp.gov.br/nfe")
         body_ele = envelope.getChildren()[1]
         body_ele.setPrefix("soap12")
-        context.envelope = re.sub( 'ns[0-9]:', '', str(context.envelope) )
-        context.envelope = re.sub( '<SOAP-ENV:Header/>', '', str(context.envelope) )
-        context.envelope = re.sub( '<VersaoSchema>', '', str(context.envelope) )
-        context.envelope = re.sub( '</VersaoSchema>', '', str(context.envelope) )
+        consulta = envelope.getChildren()[1][0]
+        consulta.set("xmlns", "http://www.prefeitura.sp.gov.br/nfe")
         return Raw(context)
+
 
 class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def __init__(self, key, cert):
@@ -130,19 +119,16 @@ class BaseNfse(models.TransientModel):
             nfse = self._get_nfse_object()
             url = self._url_envio_nfse()
             path = os.path.dirname(os.path.dirname(__file__))
-            import pudb;pu.db
             #TODO - Buscar do certificado
+
             t = HTTPSClientCertTransport('/home/carlos/certificado/key2.pem',
                                          '/home/carlos/certificado/cert.pem')
             location = 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
 
             envelope = EnvelopeFixer()
             client = Client(url, location = location, transport = t, plugins=[envelope])
-            
+
             xml_send = render(path, 'envio_loterps.xml', nfse=nfse)
-            # tirei pq estava deixando uma linha em branco
-            #xml_send = "<!DOCTYPE EnvioLoteRPS>" + \
-            #    xml_send
 
             pfx_path = self._save_pfx_certificate()
             sign = Assinatura(pfx_path, self.password)
@@ -150,10 +136,6 @@ class BaseNfse(models.TransientModel):
             reference = ""
             xml_signed = sign.assina_xml(xml_send, reference)
 
-            #xml_signed = xml_signed.replace("""<!DOCTYPE EnvioLoteRPS>""", "")
-            #xml_signed = xml_signed.replace("""<!DOCTYPE ns1:PedidoEnvioLoteRPS [ \
-            #   <!ATTLIST Lote Id ID #IMPLIED> \
-            #   ]>""", "")
             #TODO - arrumar para pasta do sistema
             arq_temp = open('/home/carlos/tmp/pyxmlsec2.xml', 'w')
             arq_temp.write(xml_signed)
@@ -167,13 +149,19 @@ class BaseNfse(models.TransientModel):
                 for erro in valida_schema:
                     erros += erro['type_name'] + ': ' + erro['message'] + '\n'
                 raise ValueError(erros)
-
             try:
                 response = client.service.TesteEnvioLoteRPS(xml_signed)
             except suds.WebFault, e:
                 print e.fault.faultstring
                 print e.document
-            #response = client.service.ConsultaCNPJ(xml_signed)
+
+            x = Raw(response)
+            arq_temp = open('/home/carlos/tmp/retorno_enviolote.xml', 'w')
+            arq_temp.write(x)
+            arq_temp.close()
+
+            print response
+
             received_xml = client.last_received()
 
             status = {'status': '', 'message': '', 'files': [
@@ -417,10 +405,7 @@ class BaseNfse(models.TransientModel):
             valor_servico = inv.amount_total
             valor_deducao = 0.0
             codigo_atividade = re.sub('[^0-9]', '', inv.cnae_id.code or '')
-            #tipo_recolhimento = 'A'
-            tipo_recolhimento = 'N' # 03/02/2016 peguei no xsd - TiposNFe_v01.xsd
-            #if inv.issqn_wh or inv.pis_wh or inv.cofins_wh or inv.csll_wh or inv.irrf_wh or inv.inss_wh:
-            #    tipo_recolhimento = 'R'
+            tipo_recolhimento = 'T' # T – Tributado em São Paulo
 
             data_envio = datetime.strptime(
                 inv.date_in_out,
@@ -429,15 +414,22 @@ class BaseNfse(models.TransientModel):
 
             print tomador['cpf_cnpj']
             cnpj_cpf = int(tomador['cpf_cnpj'])
-            assinatura = '%011dNF   %012d%s%s %s%s%015d%015d%010d%014d' % \
-                (int(prestador['inscricao_municipal']),
-                 int(inv.internal_number),
-                 data_envio, inv.taxation, 'N', tipo_recolhimento,
-                 valor_servico,
-                 valor_deducao,
-                 int(codigo_atividade),
-                 cnpj_cpf
-                 )
+            # TODO verificar se há iss retido
+            iss_retido = 'N'
+            assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s3%sN') % (
+                str(prestador['inscricao_municipal']).zfill(8),
+                inv.document_serie_id.code.ljust(5),
+                str(inv.internal_number).zfill(12),
+                str(data_envio[0:4] + data_envio[4:6] + data_envio[6:8]),
+                str(tipo_recolhimento),
+                str(iss_retido),
+                str(int(valor_servico*100)).zfill(15),
+                str(int(valor_deducao*100)).zfill(15),
+                str(codigo_atividade).zfill(5),
+                str(tipo_cpfcnpj),
+                str(cnpj_cpf).zfill(14),
+                str('').zfill(14)
+                )
 
             assinatura = hashlib.sha1(assinatura).hexdigest()
             if not tomador['cidade_descricao']:
@@ -447,7 +439,7 @@ class BaseNfse(models.TransientModel):
                 'assinatura': assinatura,
                 'tomador': tomador,
                 'prestador': prestador,
-                'serie': 'NF',  # inv.document_serie_id.code or '',
+                'serie': inv.document_serie_id.code or '',
                 'numero': inv.internal_number or '',
                 'data_emissao': "%s-%s-%s" % (inv.date_in_out[:4],inv.date_in_out[5:7], inv.date_in_out[8:10]),
                 'situacao': 'N',
