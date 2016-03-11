@@ -20,6 +20,7 @@
 
 from datetime import datetime
 from openerp import models, api, fields
+from openerp.exceptions import ValidationError
 from .service.mde import download_nfe, send_event
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
@@ -38,20 +39,28 @@ class Nfe_Mde(models.Model):
         'ir.needaction_mixin'
     ]
 
-    company_id = fields.Many2one('res.company', string="Empresa")
+    def _default_company(self):
+        return self.env.user.company_id
+
+    company_id = fields.Many2one('res.company', string="Empresa",
+                                 default=_default_company, readonly=True)
+    currency_id = fields.Many2one(related='company_id.currency_id',
+                                  string='Moeda', readonly=True)
     chNFe = fields.Char(string="Chave de Acesso", size=50, readonly=True)
     nSeqEvento = fields.Char(
         string="Número Sequencial", readonly=True, size=20)
     CNPJ = fields.Char(string="CNPJ", readonly=True, size=20)
     IE = fields.Char(string="RG/IE", readonly=True, size=20)
     xNome = fields.Char(string="Razão Social", readonly=True, size=200)
-    partner_id = fields.Many2one('res.partner', string='Fornecedor',
-                                 readonly=True)
+    partner_id = fields.Many2one('res.partner', string='Fornecedor')
     dEmi = fields.Datetime(string="Data Emissão", readonly=True)
-    tpNF = fields.Integer(string="Tipo de Operação", readonly=True)
+    tpNF = fields.Selection([('0', 'Entrada'), ('1', 'Saída')],
+                            string="Tipo de Operação", readonly=True)
     vNF = fields.Float(string="Valor Total da NF-e",
-                       readonly=True, digits=(18, 6))
-    cSitNFe = fields.Integer(string="Situação da NF-e", readonly=True)
+                       readonly=True, digits=(18, 2))
+    cSitNFe = fields.Selection([('1', 'Autorizada'), ('2', 'Cancelada'),
+                                ('3', 'Denegada')],
+                               string="Situação da NF-e", readonly=True)
     state = fields.Selection(string="Situação da Manifestação", readonly=True,
                              selection=[
                                  ('pending', 'Pendente'),
@@ -62,12 +71,18 @@ class Nfe_Mde(models.Model):
                              ])
     formInclusao = fields.Char(string="Forma de Inclusão", readonly=True)
     dataInclusao = fields.Datetime(string="Data de Inclusão", readonly=True)
-    versao = fields.Integer(string="Versão", readonly=True)
     file_path = fields.Char(string="Local Xml", size=300, readonly=True)
 
     document_event_ids = fields.One2many(
         'l10n_br_account.document_event',
         'mde_event_id', string="Documentos eletrônicos")
+
+    @api.one
+    @api.constrains('CNPJ', 'partner_id')
+    def _check_partner_id(self):
+        if self.partner_id and self.CNPJ != self.partner_id.cnpj_cpf:
+            raise ValidationError(
+                "O Parceiro não possui o mesmo CNPJ/CPF do manifesto atual")
 
     def _needaction_domain_get(self, cr, uid, context=None):
         return [('state', '=', 'pending')]

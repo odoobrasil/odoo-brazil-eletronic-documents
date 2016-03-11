@@ -41,7 +41,6 @@
     """,
     'depends': [
         'nfe',
-        'nfe_attach',
     ],
     'data': [
         'security/ir.model.access.csv',
