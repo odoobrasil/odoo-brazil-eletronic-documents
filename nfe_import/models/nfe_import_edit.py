@@ -40,6 +40,13 @@ class NfeImportEdit(models.TransientModel):
         return self.env['ir.model.data'].get_object_reference(
             'product', 'product_category_all')[1]
 
+    def _default_company(self):
+        return self.env.user.company_id
+
+    company_id = fields.Many2one('res.company', string="Empresa",
+                                 default=_default_company)
+    currency_id = fields.Many2one(related='company_id.currency_id',
+                                       string='Moeda', readonly=True)
     xml_data = fields.Char(string="Xml Data", size=200000, readonly=True)
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')

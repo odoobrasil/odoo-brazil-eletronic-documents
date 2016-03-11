@@ -6,7 +6,7 @@
 			<field name="name">nfe_import.edit.form</field>
 			<field name="model">nfe.import.edit</field>
 			<field name="arch" type="xml">
-				<form string="Importação de Documento Eletrônico">				
+				<form string="Importação de Documento Eletrônico">
 					<group string="Revisar os itens e setar os produtos faltantes">
 						<group>
 							<field name="supplier_id" />
@@ -19,9 +19,11 @@
 						<group>
 							<field name="number" />
 							<field name="natureza_operacao" />
-							<field name="amount_total" widget="monetary"  />							
+							<field name="amount_total" widget="monetary"
+								options="{'currency_field': 'currency_id'}" />
 							<field name="create_product" />
-							<field name="product_category_id" attrs="{'invisible': [('create_product', '=', False)] }" /> 
+							<field name="product_category_id"
+								attrs="{'invisible': [('create_product', '=', False)] }" />
 						</group>
 					</group>
 					<group>
