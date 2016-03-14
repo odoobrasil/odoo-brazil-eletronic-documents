@@ -20,6 +20,13 @@
 ###############################################################################
 
 
-from . import account_fiscal_position
-from . import nfe_import_edit
-from . import nfe_import_mapping
+from openerp import api, fields, models
+
+
+class AccountFiscalPosition(models.Model):
+    _inherit = 'account.fiscal.position'
+
+    icms_credit = fields.Boolean("Creditar ICMS?")
+    ipi_credit = fields.Boolean("Creditar IPI?")
+    pis_credit = fields.Boolean("Creditar PIS?")
+    cofins_credit = fields.Boolean("Creditar COFINS?")

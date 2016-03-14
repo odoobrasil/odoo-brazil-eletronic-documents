@@ -35,8 +35,9 @@
         'nfe',
     ],
     'data': [
-        'view/l10n_br_account_invoice_import.xml',
-        'view/nfe_import_view.xml'
+        'views/account_fiscal_position_view.xml',
+        'views/l10n_br_account_invoice_import.xml',
+        'views/nfe_import_view.xml'
     ],
     'css': ['static/src/css/nfe_import.css'],
     'active': False,
