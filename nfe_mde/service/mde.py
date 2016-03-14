@@ -172,18 +172,12 @@ def download_nfe(company, list_nfe):
         if result.resposta.cStat.valor == '139':
             nfe = result.resposta.retNFe[0]
             if nfe.cStat.valor == '140':
-
-                nome_arq = os.path.join(import_folder, 'download_nfe/')
                 if not os.path.exists(nome_arq):
                     os.makedirs(nome_arq)
-                nome_arq = nome_arq + nfe.chNFe.valor + 'download-nfe.xml'
-                arq = open(nome_arq, 'w')
-                arq.write(nfe.procNFe.valor.encode('utf-8'))
-                arq.close()
-
                 return {
                     'code': nfe.cStat.valor, 'message': nfe.xMotivo.valor,
-                    'file_sent': result.envio.xml, 'file_returned': nome_arq,
+                    'file_sent': result.envio.xml,
+                    'file_returned': nfe.procNFe.valor.encode('utf-8'),
                     'nfe': nfe
                 }
             else:

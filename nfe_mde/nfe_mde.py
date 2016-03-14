@@ -18,6 +18,7 @@
 ###############################################################################
 
 
+import base64
 from datetime import datetime
 from openerp import models, api, fields
 from openerp.exceptions import ValidationError
@@ -71,7 +72,6 @@ class Nfe_Mde(models.Model):
                              ])
     formInclusao = fields.Char(string="Forma de Inclusão", readonly=True)
     dataInclusao = fields.Datetime(string="Data de Inclusão", readonly=True)
-    file_path = fields.Char(string="Local Xml", size=300, readonly=True)
 
     document_event_ids = fields.One2many(
         'l10n_br_account.document_event',
@@ -91,12 +91,23 @@ class Nfe_Mde(models.Model):
         return {
             'type': type_event, 'response': response,
             'company_id': self.company_id.id,
-            'file_returned': nfe_result['file_returned'],
             'status': nfe_result['code'], 'message': nfe_result['message'],
             'create_date': datetime.now(), 'write_date': datetime.now(),
             'end_date': datetime.now(), 'state': 'done',
             'origin': response, 'mde_event_id': self.id
         }
+
+    def _create_attachment(self, event, result):
+        file_name = 'evento-manifesto-%s.xml' % datetime.now().strftime('%Y-%m-%d-%H-%M')
+        self.env['ir.attachment'].create(
+            {
+                'name': file_name,
+                'datas': base64.b64encode(result['file_returned']),
+                'datas_fname': file_name,
+                'description': u'Evento Manifesto Destinatário',
+                'res_model': 'l10n_br_account.document_event',
+                'res_id': event.id
+            })
 
     @api.one
     def action_known_emission(self):
@@ -115,7 +126,8 @@ class Nfe_Mde(models.Model):
         else:
             event['response'] = 'Ciência da operação sem êxito'
 
-        env_events.create(event)
+        event = env_events.create(event)
+        self._create_attachment(event, nfe_result)
         return True
 
     @api.one
@@ -134,7 +146,8 @@ class Nfe_Mde(models.Model):
         else:
             event['response'] = 'Confirmação da operação sem êxito'
 
-        env_events.create(event)
+        event = env_events.create(event)
+        self._create_attachment(event, nfe_result)
         return True
 
     @api.one
@@ -153,7 +166,8 @@ class Nfe_Mde(models.Model):
         else:
             event['response'] = 'Desconhecimento da operação sem êxito'
 
-        env_events.create(event)
+        event = env_events.create(event)
+        self._create_attachment(event, nfe_result)
         return True
 
     @api.one
@@ -170,7 +184,8 @@ class Nfe_Mde(models.Model):
         else:
             event['response'] = 'Tentativa de Operação não realizada sem êxito'
 
-        env_events.create(event)
+        event = env_events.create(event)
+        self._create_attachment(event, nfe_result)
         return True
 
     @api.one
@@ -183,9 +198,20 @@ class Nfe_Mde(models.Model):
             event = self._create_event('Download NFe concluido', nfe_result,
                                        type_event='10')
             env_events.create(event)
+            file_name = 'NFe%s.xml' % self.chNFe
+            self.env['ir.attachment'].create(
+                {
+                    'name': file_name,
+                    'datas': base64.b64encode(nfe_result['file_returned']),
+                    'datas_fname': file_name,
+                    'description': u'XML NFe - Download manifesto do destinatário',
+                    'res_model': 'nfe.mde',
+                    'res_id': self.id
+                })
 
         else:
             event = self._create_event('Download NFe não efetuado', nfe_result,
                                        type_event='10')
-            env_events.create(event)
+            event = env_events.create(event)
+            self._create_attachment(event, nfe_result)
         return True
