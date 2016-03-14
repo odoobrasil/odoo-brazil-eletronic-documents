@@ -43,14 +43,15 @@ class Nfe_Mde(models.Model):
     @api.multi
     def action_import_xml(self):
         self.ensure_one()
-        if os.path.isfile(self.file_path):
-            arq = open(self.file_path, 'r')
-            filename = arq.name
-            content = arq.read().decode('utf-8')
-            arq.close()
-            content = base64.b64encode(content)
+        attach_xml = self.env['ir.attachment'].search([
+            ('res_id', '=', self.id),
+            ('res_model', '=', 'nfe.mde'),
+            ('name', '=like', 'NFe%')
+        ], limit=1)
 
-            import_doc = {'edoc_input': content, 'file_name': filename}
+        if attach_xml:
+            import_doc = {'edoc_input': attach_xml.datas,
+                          'file_name': attach_xml.datas_fname}
             nfe_import = self.env[
                 'nfe_import.account_invoice_import'].create(import_doc)
 
@@ -67,32 +68,9 @@ class Nfe_Mde(models.Model):
         else:
             raise Warning(u'O arquivo xml já não existe mais no caminho especificado\n'
                           u'Contate o responsável pelo sistema')
-    
-    @api.multi    
-    def action_visualizar_danfe(self):
-        raise Warning(u'Não implementado ainda! Desculpe!')
-        self.ensure_one()
-        if os.path.isfile(self.file_path):
-            arq = open(self.file_path, 'r')            
-            content = arq.read().decode('utf-8')
-            arq.close()     
 
-            
-            #TODO Finalizar DANFE, talvez reutilizar o código do NF-e,
-            # porém precisa refatorar aquele código
-            procnfe = ProcNFe_310()
-            procnfe.xml = content
-            danfe = DANFE()
-            danfe.NFe = procnfe.NFe
-            danfe.protNFe = procnfe.protNFe
-            danfe.caminho = "/tmp/"
-            danfe.gerar_danfe()
-            
-            
-        else:
-            raise Warning(u'O arquivo xml já não existe mais no caminho especificado\n'
-                          u'Contate o responsável pelo sistema')
-        
-        
-        
-        
+    @api.multi
+    def action_visualizar_danfe(self):
+        return self.env['report'].get_action(self, 'danfe_nfe_mde',
+                                             data={'ids': self.ids,
+                                                   'model': 'nfe.mde'})

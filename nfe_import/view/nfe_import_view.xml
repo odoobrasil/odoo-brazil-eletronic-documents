@@ -17,6 +17,7 @@
 								domain="[('fiscal_category_id', '=', fiscal_category_id)]" />
 						</group>
 						<group>
+							<field name="currency_id" groups="base.group_multi_currency" />
 							<field name="number" />
 							<field name="natureza_operacao" />
 							<field name="amount_total" widget="monetary"
