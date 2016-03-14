@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'http://www.trustcode.com.br',
     'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
-                 'Mackilem Van der Laan Soares <mack.vdl@gmail.com>'
-                 ],
+                     'Mackilem Van der Laan Soares <mack.vdl@gmail.com>'
+                     ],
     'description': """
-        Com este módulo você pode programar para realizar a importação automática 
+        Com este módulo você pode programar para realizar a importação automática
         de NF-e apartir do módulo de Manifesto do Destinatário (MDE).
         O MDE periodicamente busca as notas destinadas a empresa, este módulo
         pega as notas baixadas e faz a importação.
@@ -40,8 +40,9 @@
         'nfe_import',
         'nfe_mde',
     ],
-    'data': [        
-        'views/nfe_mde_view.xml'
+    'data': [
+        'views/nfe_mde_view.xml',
+        'report/report_danfe.xml',
     ],
-    'installable': True    
+    'installable': True
 }
