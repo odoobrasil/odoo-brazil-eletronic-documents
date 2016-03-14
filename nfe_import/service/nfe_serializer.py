@@ -117,6 +117,7 @@ class NFeSerializer(object):
         res['vendor_serie'] = self.nfe.infNFe.ide.serie.valor
         res['number'] = self.nfe.infNFe.ide.nNF.valor
         res['internal_number'] = self.nfe.infNFe.ide.nNF.valor
+        res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
         res['date_in_out'] = datetime.now()
         res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
         res['nfe_access_key'] = self.nfe.infNFe.Id.valor
@@ -378,20 +379,28 @@ class NFeSerializer(object):
         if not self.det.imposto.ISSQN.cListServ.valor:
             inv_line['icms_origin'] = str(self.det.imposto.ICMS.orig.valor)
 
+            cst = self.det.imposto.ICMS.CST.valor
+            if "ICMSSN" in self.det.imposto.ICMS.nome_tag:  # Simples
+                cst = self.det.imposto.ICMS.CSOSN.valor
+
             icms_ids = self.env['account.tax.code'].search(
-                [('code', '=', self.det.imposto.ICMS.CST.valor),
+                [('code', '=', cst),
                  ('domain', '=', 'icms')])
 
             inv_line['icms_cst_id'] = icms_ids[0].id if icms_ids else False
-            inv_line['icms_percent'] = self.det.imposto.ICMS.pCredSN.valor
-            inv_line['icms_value'] = self.det.imposto.ICMS.vCredICMSSN.valor
+
+            if "ICMSSN" in self.det.imposto.ICMS.nome_tag:  # Simples
+                inv_line['icms_percent'] = self.det.imposto.ICMS.pCredSN.valor
+                inv_line[
+                    'icms_value'] = self.det.imposto.ICMS.vCredICMSSN.valor
+            else:
+                inv_line['icms_percent'] = self.det.imposto.ICMS.pICMS.valor
+                inv_line['icms_value'] = self.det.imposto.ICMS.vICMS.valor
 
             inv_line['icms_base_type'] = str(self.det.imposto.ICMS.modBC.valor)
             inv_line['icms_base'] = self.det.imposto.ICMS.vBC.valor
             inv_line[
                 'icms_percent_reduction'] = self.det.imposto.ICMS.pRedBC.valor
-            inv_line['icms_percent'] = self.det.imposto.ICMS.pICMS.valor
-            inv_line['icms_value'] = self.det.imposto.ICMS.vICMS.valor
 
             #
             # # ICMS ST
@@ -530,7 +539,9 @@ class NFeSerializer(object):
             # retornarmos seu id que o restantes dos dados vem junto
             res['carrier_id'] = carrier_ids[0].id if carrier_ids else False
             res['vehicle_id'] = vehicle_ids[0].id if vehicle_ids else False
-        except: # Não vamos adicionar dependência ao l10n_br_delivery, se der erro deixa passar.
+        # Não vamos adicionar dependência ao l10n_br_delivery, se der erro
+        # deixa passar.
+        except:
             pass
 
         res['carrier_name'] = self.nfe.infNFe.transp.transporta.xNome.valor
