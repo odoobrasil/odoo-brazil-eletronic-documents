@@ -20,6 +20,7 @@
 ###############################################################################
 
 import cPickle
+from decimal import Decimal
 from openerp import api, fields, models
 from openerp.tools.translate import _
 from openerp.exceptions import Warning
@@ -46,7 +47,7 @@ class NfeImportEdit(models.TransientModel):
     company_id = fields.Many2one('res.company', string="Empresa",
                                  default=_default_company)
     currency_id = fields.Many2one(related='company_id.currency_id',
-                                       string='Moeda', readonly=True)
+                                  string='Moeda', readonly=True)
     xml_data = fields.Char(string="Xml Data", size=200000, readonly=True)
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')
@@ -133,11 +134,54 @@ class NfeImportEdit(models.TransientModel):
                 line[2]['uos_id'] = item.uom_id.id
                 line[2]['cfop_id'] = item.cfop_id.id
 
+            line[2]['invoice_line_tax_id'] = []
+
+            tax_icms = self.env['account.tax'].search([
+                ('domain', '=', 'icms'),
+                ('amount', '=', (line[2]['icms_percent'] / Decimal(100)))
+            ])
+            if tax_icms and tax_icms[0].amount:
+                line[2]['invoice_line_tax_id'].append((4, tax_icms[0].id, 0))
+            elif tax_icms and tax_icms[0].amount and self.fiscal_position.icms_credit:
+                raise Warning(u'Atenção',
+                              u"Cadastre o ICMS %s" % line[2]['icms_percent'])
+
+            tax_ipi = self.env['account.tax'].search([
+                ('domain', '=', 'ipi'),
+                ('amount', '=', (line[2]['ipi_percent'] / Decimal(100)))
+            ])
+            if tax_ipi and tax_ipi[0].amount:
+                line[2]['invoice_line_tax_id'].append((4, tax_ipi[0].id, 0))
+            elif tax_ipi and tax_ipi[0].amount and self.fiscal_position.ipi_credit:
+                raise Warning(u'Atenção',
+                              u"Cadastre o IPI: %s" % line[2]['ipi_percent'])
+
+            tax_pis = self.env['account.tax'].search([
+                ('domain', '=', 'pis'),
+                ('amount', '=', (line[2]['pis_percent'] / Decimal(100)))
+            ])
+            if tax_pis and tax_pis[0].amount:
+                line[2]['invoice_line_tax_id'].append((4, tax_pis[0].id, 0))
+            elif tax_pis and tax_pis[0].amount and self.fiscal_position.pis_credit:
+                raise Warning(u'Atenção',
+                              u"Cadastre o PIS: %s" % line[2]['pis_percent'])
+
+            tax_cofins = self.env['account.tax'].search([
+                ('domain', '=', 'cofins'),
+                ('amount', '=', (line[2]['cofins_percent'] / Decimal(100)))
+            ])
+            if tax_cofins and tax_cofins[0].amount:
+                line[2]['invoice_line_tax_id'].append((4, tax_cofins[0].id, 0))
+            elif tax_cofins and tax_cofins[0].amount and self.fiscal_position.cofins_credit:
+                raise Warning(u'Atenção',
+                              u"Cadastre o COFINS: %s" % line[2]['cofins_percent'])
+
             index += 1
 
         self._validate()
 
         invoice = self.env['account.invoice'].create(inv_values)
+        invoice.button_reset_taxes()
         self.attach_doc_to_invoice(invoice.id, self.edoc_input,
                                    self.file_name)
 
@@ -164,12 +208,13 @@ class NfeImportEdit(models.TransientModel):
                 })
             line[2]['fiscal_classification_id'] = ncm.id
 
-        vals = {'name': line[2]['product_name_xml'],
-                'type': 'product',
-                'fiscal_type': 'product',
-                'ncm_id': line[2]['fiscal_classification_id'],
-                'default_code': line[2]['product_code_xml'],
-                }
+        vals = {
+            'name': line[2]['product_name_xml'],
+            'type': 'product',
+            'fiscal_type': 'product',
+            'ncm_id': line[2]['fiscal_classification_id'],
+            'default_code': line[2]['product_code_xml'],
+        }
 
         if default_category:
             vals['categ_id'] = default_category.id
