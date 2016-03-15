@@ -26,6 +26,7 @@ import base64
 import string
 import pysped
 import tempfile
+from decimal import Decimal
 from datetime import datetime
 
 from openerp.tools.translate import _
@@ -436,6 +437,7 @@ class NFeSerializer(object):
                     [('code', '=', '49'),
                      ('domain', '=', 'ipi')])
                 inv_line['ipi_type'] = 'percent'
+                inv_line['ipi_percent'] = Decimal(0)
                 inv_line['ipi_cst_id'] = ipi_ids[0].id if ipi_ids else False
 
             inv_line['ipi_value'] = self.det.imposto.IPI.vIPI.valor
