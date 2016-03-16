@@ -46,25 +46,28 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
     state = fields.Selection([('init', 'init'), ('done', 'done')],
                              string='state', readonly=True, default='init')
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
-                               help=u'Somente arquivos no formato TXT e XML')
+                               help=u'Somente arquivos no formato TXT e XML',
+                               required=True)
     file_name = fields.Char('File Name', size=128)
     create_partner = fields.Boolean(
         u'Criar fornecedor automaticamente?', default=True,
         help=u'Cria o fornecedor automaticamente caso não esteja cadastrado')
-    purchase_order_id = fields.Many2one('purchase.order',
-                                        u'Pedido de Compra')
+    account_invoice_id = fields.Many2one('account.invoice',
+                                         u'Fatura de compra')
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal')
     fiscal_position = fields.Many2one(
         'account.fiscal.position', 'Posição Fiscal',
         domain="[('fiscal_category_id','=',fiscal_category_id)]")
 
-    @api.onchange('purchase_order_id')
-    def onchange_purchase_order(self):
-        self.fiscal_category_id = self.purchase_order_id.fiscal_category_id.id
-        self.fiscal_position = self.purchase_order_id.fiscal_position.id    
+    @api.onchange('account_invoice_id')
+    def onchange_account_invoice(self):
+        self.fiscal_category_id = self.account_invoice_id.fiscal_category_id.id
+        self.fiscal_position = self.account_invoice_id.fiscal_position.id
 
     def _check_extension(self, filename):
+        if not filename:
+            raise Warning(_('Please select a correct XML file'))
         (__, ftype) = os.path.splitext(filename)
         if ftype.lower() not in ('.xml'):
             raise Warning(_('Please select a correct XML file'))
@@ -98,6 +101,8 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
             inv_values['fiscal_category_id'] = importer.fiscal_category_id.id
             inv_values['fiscal_position'] = importer.fiscal_position.id
+            inv_values['journal_id'] = \
+                importer.fiscal_category_id.property_journal.id
 
             product_import_ids = []
 
@@ -136,6 +141,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                       }))
 
             values = {'supplier_id': inv_values['partner_id'],
+                      'account_invoice_id': importer.account_invoice_id.id,
                       'fiscal_category_id': importer.fiscal_category_id.id,
                       'fiscal_position': importer.fiscal_position.id,
                       'number': inv_values['internal_number'],
