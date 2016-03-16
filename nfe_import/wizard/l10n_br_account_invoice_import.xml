@@ -12,12 +12,11 @@
                         <group states = "init">
                             <field name="edoc_input" filename="file_name" colspan="2"/>
                             <field name="file_name" colspan="2" invisible="1"/>
-                            <field name="purchase_order_id" />
-                            <field name="create_partner" attrs="{ 'invisible': [( 'purchase_order_id', '!=' , False)] }" />
+                            <field name="account_invoice_id" domain="[('issuer', '=', '1'), ('type', '=', 'in_invoice')]" />
+                            <field name="create_partner" attrs="{ 'invisible': [( 'account_invoice_id', '!=' , False)] }" />
                             <field name="fiscal_category_id" domain="[('journal_type','in',('purchase',)),('fiscal_type','=','product'),('type','=','input')]" 
-                            	required="1" attrs="{ 'readonly': [( 'purchase_order_id', '!=' , False)] }"/>
-							<field name="fiscal_position" required="1" domain="[('fiscal_category_id', '=', fiscal_category_id)]"
-								attrs="{ 'readonly': [( 'purchase_order_id', '!=' , False)] }" />
+                            	required="1" />
+							<field name="fiscal_position" required="1" domain="[('fiscal_category_id', '=', fiscal_category_id)]" />
                         </group>
                         <group states = "done">
                         </group>

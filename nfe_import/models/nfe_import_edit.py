@@ -62,6 +62,8 @@ class NfeImportEdit(models.TransientModel):
     amount_total = fields.Float(string="Valor Total", digits=(18, 2),
                                 readonly=True)
 
+    account_invoice_id = fields.Many2one('account.invoice',
+                                         u'Fatura de compra')
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal')
     fiscal_position = fields.Many2one(
@@ -137,7 +139,7 @@ class NfeImportEdit(models.TransientModel):
             line[2]['invoice_line_tax_id'] = []
 
             tax_icms = self.env['account.tax'].search([
-                ('domain', '=', 'icms'),
+                ('domain', '=', 'icms'), ('type_tax_use', '=', 'purchase'),
                 ('amount', '=', (line[2]['icms_percent'] / Decimal(100)))
             ])
             if tax_icms and tax_icms[0].amount:
@@ -147,7 +149,7 @@ class NfeImportEdit(models.TransientModel):
                               u"Cadastre o ICMS %s" % line[2]['icms_percent'])
 
             tax_ipi = self.env['account.tax'].search([
-                ('domain', '=', 'ipi'),
+                ('domain', '=', 'ipi'), ('type_tax_use', '=', 'purchase'),
                 ('amount', '=', (line[2]['ipi_percent'] / Decimal(100)))
             ])
             if tax_ipi and tax_ipi[0].amount:
@@ -157,7 +159,7 @@ class NfeImportEdit(models.TransientModel):
                               u"Cadastre o IPI: %s" % line[2]['ipi_percent'])
 
             tax_pis = self.env['account.tax'].search([
-                ('domain', '=', 'pis'),
+                ('domain', '=', 'pis'), ('type_tax_use', '=', 'purchase'),
                 ('amount', '=', (line[2]['pis_percent'] / Decimal(100)))
             ])
             if tax_pis and tax_pis[0].amount:
@@ -167,7 +169,8 @@ class NfeImportEdit(models.TransientModel):
                               u"Cadastre o PIS: %s" % line[2]['pis_percent'])
 
             tax_cofins = self.env['account.tax'].search([
-                ('domain', '=', 'cofins'),
+                ('domain', '=', 'cofins'), ('type_tax_use',
+                                            '=', 'purchase'),
                 ('amount', '=', (line[2]['cofins_percent'] / Decimal(100)))
             ])
             if tax_cofins and tax_cofins[0].amount:
@@ -182,6 +185,8 @@ class NfeImportEdit(models.TransientModel):
 
         invoice = self.env['account.invoice'].create(inv_values)
         invoice.button_reset_taxes()
+        if not self.account_invoice_id:
+            self.create_stock_picking(invoice)
         self.attach_doc_to_invoice(invoice.id, self.edoc_input,
                                    self.file_name)
 
@@ -228,6 +233,42 @@ class NfeImportEdit(models.TransientModel):
 
         product_tmpl = self.env['product.template'].create(vals)
         return product_tmpl.product_variant_ids[0]
+
+    def create_stock_picking(self, invoice):
+        warehouse = self.env['stock.warehouse'].search([
+            ('partner_id', '=', self.env.user.company_id.partner_id.id)
+        ])
+        picking_type_id = self.env['stock.picking.type'].search([
+            ('warehouse_id', '=', warehouse.id), ('code', '=', 'incoming')
+        ])
+
+        picking_vals = {
+            'name': '/',
+            'origin': 'Fatura: %s-%s' % (invoice.internal_number,
+                                         invoice.vendor_serie),
+            'partner_id': invoice.partner_id.id,
+            'invoice_state': 'none',
+            'fiscal_category_id': invoice.fiscal_category_id.id,
+            'fiscal_position': invoice.fiscal_position.id,
+            'picking_type_id': picking_type_id.id,
+            'move_lines': [],
+        }
+        for line in invoice.invoice_line:
+            move_vals = {
+                'name': line.product_id.name,
+                'product_id': line.product_id.id,
+                'product_uom_qty': line.quantity,
+                'product_uom': line.product_id.uom_po_id.id,
+                'invoice_state': 'none',
+                'fiscal_category_id': line.fiscal_category_id.id,
+                'fiscal_position': line.fiscal_position.id,
+                'location_id': picking_type_id.default_location_src_id.id,
+                'location_dest_id': picking_type_id.default_location_dest_id.id,
+            }
+            picking_vals['move_lines'].append((0, 0, move_vals))
+
+        picking = self.env['stock.picking'].create(picking_vals)
+        picking.action_confirm()
 
     @api.onchange('fiscal_position')
     def position_fiscal_onchange(self):
