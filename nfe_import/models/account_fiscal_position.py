@@ -30,3 +30,16 @@ class AccountFiscalPosition(models.Model):
     ipi_credit = fields.Boolean("Creditar IPI?")
     pis_credit = fields.Boolean("Creditar PIS?")
     cofins_credit = fields.Boolean("Creditar COFINS?")
+
+
+class AccountFiscalPositionTax(models.Model):
+    _inherit = 'account.fiscal.position.tax'
+
+    cfop_src_id = fields.Many2one(
+        'l10n_br_account_product.cfop',
+        string=u"CFOP de Origem",
+        help=u"Apenas válido para a importação do xml")
+    cfop_dest_id = fields.Many2one(
+        'l10n_br_account_product.cfop',
+        string=u"CFOP de Destino",
+        help=u"Apenas válido para a importação do xml")

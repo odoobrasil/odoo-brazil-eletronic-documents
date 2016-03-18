@@ -76,6 +76,48 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
     def _get_nfe_factory(self, nfe_version):
         return NfeFactory().get_nfe(nfe_version)
 
+    def _map_line(self, inv_line, fiscal_position):
+        inv_line[2]['cfop_id'] = fiscal_position.cfop_id.id
+
+        for tax_mapping in fiscal_position.tax_ids:
+            if tax_mapping.cfop_src_id  and \
+                    tax_mapping.tax_code_src_id:
+
+                if tax_mapping.tax_code_src_id.id == inv_line[2]['icms_cst_id'] and \
+                        tax_mapping.cfop_src_id.code == str(inv_line[2]['cfop_xml']):
+
+                    if tax_mapping.tax_code_dest_id:
+                        inv_line[2][
+                            'icms_cst_id'] = tax_mapping.tax_code_dest_id.id
+                    if tax_mapping.cfop_dest_id:
+                        inv_line[2]['cfop_id'] = tax_mapping.cfop_dest_id.id
+                    break
+
+            if tax_mapping.tax_code_src_id:
+                if tax_mapping.tax_code_src_id.id == inv_line[
+                        2]['icms_cst_id']:
+                    # A CST de Origem bate então tenta setar CFOP e CST de
+                    # destino se existir
+                    if tax_mapping.tax_code_dest_id:
+                        inv_line[2][
+                            'icms_cst_id'] = tax_mapping.tax_code_dest_id.id
+                    if tax_mapping.cfop_dest_id:
+                        inv_line[2]['cfop_id'] = tax_mapping.cfop_dest_id.id
+                    break
+
+            if tax_mapping.cfop_src_id:
+                if tax_mapping.cfop_src_id.id == inv_line[2]['cfop_xml']:
+                    # A CFOP de origem bate então tenta setar CFOP e CST de
+                    # destino se existir
+                    if tax_mapping.tax_code_dest_id:
+                        inv_line[2][
+                            'icms_cst_id'] = tax_mapping.tax_code_dest_id.id
+                    if tax_mapping.cfop_dest_id:
+                        inv_line[2]['cfop_id'] = tax_mapping.cfop_dest_id.id
+                    break
+
+        return inv_line
+
     @api.multi
     def import_edoc(self, req_id, context=False):
         try:
@@ -111,19 +153,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                     'fiscal_category_id'] = importer.fiscal_category_id.id
                 inv_line[2]['fiscal_position'] = importer.fiscal_position.id
 
-                cfop_map = self.env['nfe.import.cfop.mapping'].search(
-                    [('cfop_origin_id.code', '=', inv_line[2]['cfop_xml'])])
-
-                if cfop_map:
-                    inv_line[2]['cfop_id'] = cfop_map.cfop_dest_id.id
-                else:
-                    cfop_orig = inv_line[2]['cfop_xml']
-                    cfop_dest = cfop_orig - 4000 \
-                        if cfop_orig > 4000 else cfop_orig
-                    cfop_dest_id = self.env['l10n_br_account_product.cfop'].\
-                        search([('code', '=', cfop_dest)])
-
-                    inv_line[2]['cfop_id'] = cfop_dest_id.id
+                inv_line = self._map_line(inv_line, importer.fiscal_position)
 
                 product_import_ids.append(
                     (0, 0,
