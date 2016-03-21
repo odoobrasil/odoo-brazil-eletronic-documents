@@ -116,8 +116,6 @@ class NFeSerializer(object):
             fiscal_doc_ids[0].id if fiscal_doc_ids else False
 
         res['vendor_serie'] = self.nfe.infNFe.ide.serie.valor
-        res['number'] = self.nfe.infNFe.ide.nNF.valor
-        res['internal_number'] = self.nfe.infNFe.ide.nNF.valor
         res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
         res['date_in_out'] = datetime.now()
         res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
@@ -312,7 +310,7 @@ class NFeSerializer(object):
         #
         # Detalhes
         #
-        inv_line = {}
+        inv_line = {'invoice_line_tax_id': []}
 
         product_ids = self.env['product.product'].search(
             [('default_code', '=', self.det.prod.cProd.valor)])
@@ -403,6 +401,13 @@ class NFeSerializer(object):
             inv_line[
                 'icms_percent_reduction'] = self.det.imposto.ICMS.pRedBC.valor
 
+            tax_icms = self.env['account.tax'].search([
+                ('domain', '=', 'icms'), ('type_tax_use', '=', 'purchase'),
+                ('amount', '=', (inv_line['icms_percent'] / Decimal(100)))
+            ])
+            if tax_icms and tax_icms[0].amount:
+                inv_line['invoice_line_tax_id'].append((4, tax_icms[0].id, 0))
+
             #
             # # ICMS ST
             #
@@ -442,6 +447,13 @@ class NFeSerializer(object):
 
             inv_line['ipi_value'] = self.det.imposto.IPI.vIPI.valor
 
+            tax_ipi = self.env['account.tax'].search([
+                ('domain', '=', 'ipi'), ('type_tax_use', '=', 'purchase'),
+                ('amount', '=', (inv_line['ipi_percent'] / Decimal(100)))
+            ])
+            if tax_ipi and tax_ipi[0].amount:
+                inv_line['invoice_line_tax_id'].append((4, tax_ipi[0].id, 0))
+
         else:
             #
             # # ISSQN
@@ -461,6 +473,13 @@ class NFeSerializer(object):
         inv_line['pis_percent'] = self.det.imposto.PIS.pPIS.valor
         inv_line['pis_value'] = self.det.imposto.PIS.vPIS.valor
 
+        tax_pis = self.env['account.tax'].search([
+            ('domain', '=', 'pis'), ('type_tax_use', '=', 'purchase'),
+            ('amount', '=', (inv_line['pis_percent'] / Decimal(100)))
+        ])
+        if tax_pis and tax_pis[0].amount:
+            inv_line['invoice_line_tax_id'].append((4, tax_pis[0].id, 0))
+
         # PISST
         inv_line['pis_st_base'] = self.det.imposto.PISST.vBC.valor
         inv_line['pis_st_percent'] = self.det.imposto.PISST.pPIS.valor
@@ -476,6 +495,14 @@ class NFeSerializer(object):
         inv_line['cofins_base'] = self.det.imposto.COFINS.vBC.valor
         inv_line['cofins_percent'] = self.det.imposto.COFINS.pCOFINS.valor
         inv_line['cofins_value'] = self.det.imposto.COFINS.vCOFINS.valor
+
+        tax_cofins = self.env['account.tax'].search([
+            ('domain', '=', 'cofins'), ('type_tax_use',
+                                        '=', 'purchase'),
+            ('amount', '=', (inv_line['cofins_percent'] / Decimal(100)))
+        ])
+        if tax_cofins and tax_cofins[0].amount:
+            inv_line['invoice_line_tax_id'].append((4, tax_cofins[0].id, 0))
 
         # COFINSST
         inv_line['cofins_st_base'] = self.det.imposto.COFINSST.vBC.valor

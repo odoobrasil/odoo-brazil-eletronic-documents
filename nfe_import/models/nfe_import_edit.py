@@ -136,48 +136,8 @@ class NfeImportEdit(models.TransientModel):
                 line[2]['uos_id'] = item.uom_id.id
                 line[2]['cfop_id'] = item.cfop_id.id
 
-            line[2]['invoice_line_tax_id'] = []
-
-            tax_icms = self.env['account.tax'].search([
-                ('domain', '=', 'icms'), ('type_tax_use', '=', 'purchase'),
-                ('amount', '=', (line[2]['icms_percent'] / Decimal(100)))
-            ])
-            if tax_icms and tax_icms[0].amount:
-                line[2]['invoice_line_tax_id'].append((4, tax_icms[0].id, 0))
-            elif tax_icms and tax_icms[0].amount and self.fiscal_position.icms_credit:
-                raise Warning(u'Atenção',
-                              u"Cadastre o ICMS %s" % line[2]['icms_percent'])
-
-            tax_ipi = self.env['account.tax'].search([
-                ('domain', '=', 'ipi'), ('type_tax_use', '=', 'purchase'),
-                ('amount', '=', (line[2]['ipi_percent'] / Decimal(100)))
-            ])
-            if tax_ipi and tax_ipi[0].amount:
-                line[2]['invoice_line_tax_id'].append((4, tax_ipi[0].id, 0))
-            elif tax_ipi and tax_ipi[0].amount and self.fiscal_position.ipi_credit:
-                raise Warning(u'Atenção',
-                              u"Cadastre o IPI: %s" % line[2]['ipi_percent'])
-
-            tax_pis = self.env['account.tax'].search([
-                ('domain', '=', 'pis'), ('type_tax_use', '=', 'purchase'),
-                ('amount', '=', (line[2]['pis_percent'] / Decimal(100)))
-            ])
-            if tax_pis and tax_pis[0].amount:
-                line[2]['invoice_line_tax_id'].append((4, tax_pis[0].id, 0))
-            elif tax_pis and tax_pis[0].amount and self.fiscal_position.pis_credit:
-                raise Warning(u'Atenção',
-                              u"Cadastre o PIS: %s" % line[2]['pis_percent'])
-
-            tax_cofins = self.env['account.tax'].search([
-                ('domain', '=', 'cofins'), ('type_tax_use',
-                                            '=', 'purchase'),
-                ('amount', '=', (line[2]['cofins_percent'] / Decimal(100)))
-            ])
-            if tax_cofins and tax_cofins[0].amount:
-                line[2]['invoice_line_tax_id'].append((4, tax_cofins[0].id, 0))
-            elif tax_cofins and tax_cofins[0].amount and self.fiscal_position.cofins_credit:
-                raise Warning(u'Atenção',
-                              u"Cadastre o COFINS: %s" % line[2]['cofins_percent'])
+            inv_values['invoice_line'][
+                index] = self.fiscal_position.fiscal_position_map(line[2])
 
             index += 1
 
