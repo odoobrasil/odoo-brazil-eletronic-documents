@@ -18,10 +18,11 @@
 					</page>
 				</notebook>
 				<xpath expr="//tree/field[@name='tax_src_id']" position="after">
-					<field name="cfop_src_id" />
+					<field name="type" invisible="1" />
+					<field name="cfop_src_id" domain="[('type', '=', 'input')]" attrs="{'invisible': [('type', '=', 'output')] }" />
 				</xpath>
 				<xpath expr="//tree/field[@name='tax_code_dest_id']" position="after">
-					<field name="cfop_dest_id" />
+					<field name="cfop_dest_id" domain="[('type', '=', 'input')]" attrs="{'invisible': [('type', '=', 'output')] }" />
 				</xpath>
 			</field>
 		</record>
