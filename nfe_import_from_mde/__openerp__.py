@@ -43,6 +43,7 @@
     'data': [
         'views/nfe_mde_view.xml',
         'report/report_danfe.xml',
+        'wizard/wizard_nfe_import_xml_view.xml',
     ],
     'installable': True
 }

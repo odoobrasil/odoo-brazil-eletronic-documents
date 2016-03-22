@@ -545,6 +545,7 @@ class NFeSerializer(object):
         res = {}
         cnpj_cpf = ''
 
+        res['freight_responsibility'] = str(self.nfe.infNFe.transp.modFrete.valor)
         # Realizamos a importacao da transportadora
         if self.nfe.infNFe.transp.transporta.CNPJ.valor:
             cnpj_cpf = self.nfe.infNFe.transp.transporta.CNPJ.valor

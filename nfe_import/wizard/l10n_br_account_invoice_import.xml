@@ -10,9 +10,10 @@
                     <field invisible="1" name="state"/>
                     <group>
                         <group states = "init">
-                            <field name="edoc_input" filename="file_name" colspan="2"/>
+                            <field name="edoc_input" filename="file_name" colspan="2" required="1" />
                             <field name="file_name" colspan="2" invisible="1"/>
                             <field name="account_invoice_id" domain="[('issuer', '=', '1'), ('type', '=', 'in_invoice')]" />
+                            <field name="supplier_partner_id" />
                             <field name="create_partner" attrs="{ 'invisible': [( 'account_invoice_id', '!=' , False)] }" />
                             <field name="fiscal_category_id" domain="[('journal_type','in',('purchase',)),('fiscal_type','=','product'),('type','=','input')]" 
                             	required="1" />

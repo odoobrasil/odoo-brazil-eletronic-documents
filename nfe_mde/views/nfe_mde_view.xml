@@ -23,6 +23,7 @@
 					<group>
 						<group>
 							<field name="chNFe" select="1" />
+							<field name="nNFe" />
 							<field name="nSeqEvento" />
 							<field name="CNPJ" />
 							<field name="IE" />
