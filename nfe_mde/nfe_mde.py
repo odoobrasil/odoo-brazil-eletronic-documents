@@ -40,6 +40,13 @@ class Nfe_Mde(models.Model):
         'ir.needaction_mixin'
     ]
 
+    @api.multi
+    def name_get(self):
+        return [(rec.id,
+                 u"NFº: {0} ({1}): {2}".format(
+                     rec.nNFe, rec.CNPJ, rec.xNome)
+                 ) for rec in self]
+
     def _default_company(self):
         return self.env.user.company_id
 
@@ -48,6 +55,7 @@ class Nfe_Mde(models.Model):
     currency_id = fields.Many2one(related='company_id.currency_id',
                                   string='Moeda', readonly=True)
     chNFe = fields.Char(string="Chave de Acesso", size=50, readonly=True)
+    nNFe = fields.Char(string="Número NFe", size=10, readonly=True)
     nSeqEvento = fields.Char(
         string="Número Sequencial", readonly=True, size=20)
     CNPJ = fields.Char(string="CNPJ", readonly=True, size=20)
