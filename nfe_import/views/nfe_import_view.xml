@@ -9,6 +9,9 @@
 				<form string="Importação de Documento Eletrônico">
 					<group string="Revisar os itens e setar os produtos faltantes">
 						<group>
+							<field name="import_from_invoice" invisible="1" />
+							<field name="account_invoice_id"
+								attrs="{'invisible': [('import_from_invoice', '=', False)]}" />
 							<field name="supplier_id" />
 							<field name="fiscal_category_id"
 								domain="[('journal_type','in',('purchase',)),('fiscal_type','=','product'),('type','=','input')]"
@@ -22,9 +25,10 @@
 							<field name="natureza_operacao" />
 							<field name="amount_total" widget="monetary"
 								options="{'currency_field': 'currency_id'}" />
-							<field name="create_product" />
+							<field name="create_product"
+								attrs="{'invisible': [('import_from_invoice', '!=', False)]}" />
 							<field name="product_category_id"
-								attrs="{'invisible': [('create_product', '=', False)] }" />
+								attrs="{'invisible': ['|', ('create_product', '=', False), ('import_from_invoice', '!=', False)] }" />
 						</group>
 					</group>
 					<group>
@@ -55,6 +59,8 @@
 			<field name="model">nfe.import.products</field>
 			<field name="arch" type="xml">
 				<tree editable="top" create="false" class="nfe_import_tree">
+					<field name="invoice_id" invisible="1" />
+					<field name="invoice_line_id" />
 					<field name="product_id" />
 					<field name="cfop_id" />
 					<field name="uom_id" />
