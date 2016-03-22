@@ -10,10 +10,11 @@
 			<field name="arch" type="xml">
 				<field name="dataInclusao" position="after">
 					<field name="xml_downloaded" invisible="1" />
+					<field name="xml_imported" invisible="1" />
 				</field>
 				<button name="action_download_xml" position="after">
 					<button name="action_import_xml" string="Efetuar importação do xml" class="oe_highlight"
-						type="object" attrs="{ 'invisible': [('xml_downloaded', '=', False)] }"></button>
+						type="object" attrs="{ 'invisible': ['|', ('xml_downloaded', '=', False), ('xml_imported', '=', True)] }"></button>
 					<button name="action_visualizar_danfe" string="Visualizar Danfe" class="oe_highlight"
 						type="object" attrs="{ 'invisible': [('xml_downloaded', '=', False)] }"></button>
 				</button>
