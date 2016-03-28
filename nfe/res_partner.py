@@ -72,15 +72,15 @@ class ResPartner(orm.Model):
                         _("Erro ao se comunicar com o SEFAZ"),
                         _("%s - %s") % (info.get('cStat', ''),
                                         info.get('xMotivo', '')))
-                if info['cSit'] not in ('1',):
-                    raise orm.except_orm(
-                        _("Situação Cadastral Vigente:"),
-                        _("NÃO HABILITADO"))
 
-                city_id = self.pool.get('l10n_br_base.city').search(
-                    cr, uid, [('ibge_code', '=', info['cMun'][2:])])[0]
-                state_id = self.pool.get('res.country.state').search(
-                    cr, uid, [('ibge_code', '=', info['cMun'][:2])])[0]
+                city_id = state_id = None
+
+                if "cMun" in info:
+                    city_id = self.pool.get('l10n_br_base.city').search(
+                        cr, uid, [('ibge_code', '=', info['cMun'][2:])])[0]
+                    state_id = self.pool.get('res.country.state').search(
+                        cr, uid, [('ibge_code', '=', info['cMun'][:2]),
+                                  ('country_id.code', '=', 'BR')])[0]
 
                 result = {
                     'district': info.get('xBairro', ''),
