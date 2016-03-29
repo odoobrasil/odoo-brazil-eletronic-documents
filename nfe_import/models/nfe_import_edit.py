@@ -87,7 +87,7 @@ class NfeImportEdit(models.TransientModel):
         return super(NfeImportEdit, self).create(values)
 
     def _validate(self):
-        indice = 1
+        indice = 0
         for item in self.product_import_ids:
             if self.import_from_invoice and not item.invoice_line_id:
                 raise Warning(
@@ -131,7 +131,7 @@ class NfeImportEdit(models.TransientModel):
         for item in self.product_import_ids:
             line = inv_values['invoice_line'][index]
 
-            if not line[2]['product_id']:
+            if not item.product_id:
                 if self.create_product:
 
                     product_created = self.product_create(
@@ -142,16 +142,29 @@ class NfeImportEdit(models.TransientModel):
                     line[2]['product_id'] = product_created.id
                     line[2]['uos_id'] = product_created.uom_id.id
 
-                self.env['product.supplierinfo'].create(
-                    {'name': self.supplier_id.id,
-                     'product_name': item.product_xml,
-                     'product_code': item.code_product_xml,
-                     'product_tmpl_id': item.product_id.product_tmpl_id.id})
+                    self.env['product.supplierinfo'].create({
+                        'name': self.supplier_id.id,
+                        'product_name': item.product_xml,
+                        'product_code': item.code_product_xml,
+                        'product_tmpl_id': item.product_id.product_tmpl_id.id
+                    })
 
             else:
                 line[2]['product_id'] = item.product_id.id
                 line[2]['uos_id'] = item.uom_id.id
                 line[2]['cfop_id'] = item.cfop_id.id
+
+                total_recs = self.env['product.supplierinfo'].search_count(
+                    [('name', '=', self.supplier_id.id),
+                     ('product_code', '=', item.code_product_xml)]
+                )
+                if total_recs == 0:
+                    self.env['product.supplierinfo'].create({
+                        'name': self.supplier_id.id,
+                        'product_name': item.product_xml,
+                        'product_code': item.code_product_xml,
+                        'product_tmpl_id': item.product_id.product_tmpl_id.id
+                    })
 
             inv_values['invoice_line'][
                 index] = self.fiscal_position.fiscal_position_map(line[2])
