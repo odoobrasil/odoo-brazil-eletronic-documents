@@ -115,7 +115,7 @@ class NFeSerializer(object):
         res['fiscal_document_id'] = \
             fiscal_doc_ids[0].id if fiscal_doc_ids else False
 
-        res['vendor_serie'] = self.nfe.infNFe.ide.serie.valor
+        res['vendor_serie'] = str(self.nfe.infNFe.ide.serie.valor)
         res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
         res['date_in_out'] = datetime.now()
         res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
