@@ -24,12 +24,16 @@ import os
 import base64
 import re
 import string
+import logging
 from PIL import Image
 from StringIO import StringIO
 from pyPdf import PdfFileReader, PdfFileWriter
 
 from pysped.nfe import ProcessadorNFe
 from pysped.nfe.danfe import DANFE
+
+
+_logger = logging.getLogger(__name__)
 
 
 def __processo(company):
@@ -168,12 +172,22 @@ def print_danfe(inv):
 
 
 def add_backgound_to_logo_image(company):
-    logo = company.logo
-    logo_image = Image.open(StringIO(logo.decode('base64')))
-    image_path = os.path.join(company.nfe_export_folder, 'company_logo.png')
+    try:
+        logo = company.logo
+        if logo:
+            logo_image = Image.open(StringIO(logo.decode('base64')))
+            image_path = os.path.join(
+                company.nfe_export_folder,
+                'company_logo.png')
 
-    bg = Image.new("RGB", logo_image.size, (255, 255, 255))
-    bg.paste(logo_image, logo_image)
-    bg.save(image_path)
+            bg = Image.new(logo_image.mode, logo_image.size, (255, 255, 255))
+            if logo_image.mode == 'RGB':
+                bg.paste(logo_image)
+            else:
+                bg.paste(logo_image, logo_image)
+            bg.save(image_path)
 
-    return image_path
+            return image_path
+    except:
+        _logger.warning(u'Problemas ao carregar a logo', exc_info=True)
+        return None
