@@ -22,4 +22,3 @@
 
 from . import account_fiscal_position
 from . import nfe_import_edit
-from . import nfe_import_mapping
