@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ###############################################################################
 #
-# Copyright (C) 2013  Renato Lima - Akretion
+# Copyright (C) 2014  KMEE  - www.kmee.com.br - Rafael da Silva Lima
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -17,7 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from . import sped
-from . import models
-from . import wizard
-from . import report
+from openerp import models, fields
+
+
+class ResCompany(models.Model):
+    _inherit = 'res.company'
+
+    nfe_email = fields.Text('Observação em Email NFe')
