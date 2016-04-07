@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8'?>
+<openerp>
+    <data>
+
+        <record id="qweb_pdf_export" model="ir.actions.report.xml">
+          <field name="name">Relatorio de faturamento PDF</field>
+          <field name="model">nfe.invoice.report</field>
+          <field name="type">ir.actions.report.xml</field>
+          <field name="report_name">nfe.report_nfe_invoice_instance</field>
+          <field name="report_type">qweb-pdf</field>
+          <field name="auto" eval="False"/>
+        </record>
+
+        <record id="nfe_invoice_report_wizard_view" model="ir.ui.view">
+            <field name="name">Relatorio de faturamento</field>
+            <field name="model">nfe.invoice.report</field>
+            <field name="arch" type="xml">
+				<form string="Relatorio de faturamento" version="7.0">
+                    <group>
+                        <group  string="Filtros">
+                            <!--<field name="name" />-->
+                            <field name="start_date" />
+                            <field name="stop_date"/>
+                            <field name="state"/>
+                            <field name="issuer"/>
+                            <field name="revenue_expense" widget="radio" />
+                            <field name="fiscal_type" />
+                            <field name="operation_type" />
+                        </group>
+                        <group string="Opções de impressao">
+                            <field name="landscape_pdf"/>
+                            <field name="search_order" widget="radio"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Categoria Fiscal">
+                            <field name="fiscal_category_ids"/>
+                        </page>
+                    </notebook>
+					<footer>
+                        <button icon="gtk-print" name="%(qweb_pdf_export)d" string="Print" type="action" colspan="2"/>
+						<button special="cancel" string="Cancel" type="object" class="oe_link"/>
+					</footer>
+				</form>
+			</field>
+		</record>
+
+		<record id="action_nfe_invoice_report_wizard" model="ir.actions.act_window">
+			<field name="name">Emissão de NF-E</field>
+			<field name="res_model">nfe.invoice.report</field>
+			<field name="view_type">form</field>
+			<field name="view_mode">form</field>
+			<field name="target">new</field>
+		</record>
+		<menuitem action="action_nfe_invoice_report_wizard" id="menu_nfe_invoice_report_wizard"
+			name="Emissão de NF-E" parent="account.menu_finance_reporting" groups="group_account_user,group_account_manager"/>
+
+    </data>
+</openerp>
