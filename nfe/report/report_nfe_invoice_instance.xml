@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="report_nfe_invoice_instance">
+        <t t-call="report.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="report.external_layout">
+                  <div class="page">
+                  <h2 t-field="o.name"></h2>
+                      <div class="row mt32 mb32" id="Filtros">
+                            <div class="col-xs-3" t-if="o.start_date">
+                            <strong>Date:</strong>
+                                <p t-field="o.start_date"/> to <p t-field="o.stop_date"/>
+                            </div>
+                            <div class="col-xs-3">
+                                <strong>Tipo fiscal:</strong>
+                                <p t-field="o.fiscal_type"/>
+                            </div>
+                            <div t-if="o.revenue_expense" class="col-xs-3">
+                                <strong>c/ financeiro</strong>
+                            </div>
+                        </div>
+                    <table class="table table-condensed table-striped" style="font-size:8px">
+                        <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Date</th>
+                                <th>Tipo</th>
+                                <th>Razão Social</th>
+                                <th>CNPJ/CPF</th>
+                                <th>Categoria Fiscal</th>
+                                <th>Financeiro</th>
+                                <th>Valor</th>
+                                <th>Valor c/ Impostos</th>
+                                <th>Situação</th>
+                                <!--<th>Chave</th>-->
+                                <!--<th>Status</th>-->
+                            </tr>
+                       </thead>
+                       <tbody>
+                           <tr t-foreach="docs_computed[o.id]['content']" t-as="c">
+                                <td>
+                                   <span t-esc="c_value['internal_number']"/>
+                                </td>
+                                <td>
+                                   <span t-esc="c_value['date']"/>
+                                </td>
+                               <td>
+                                   <span t-esc="c_value['type']"/>
+                                </td>
+                               <td>
+                                   <span t-esc="c_value['partner']"/>
+                                </td>
+                              <td>
+                                   <span t-esc="c_value['cnpj_cpf']"/>
+                                </td>
+                               <td>
+                                   <span t-esc="c_value['fiscal_category']"/>
+                                </td>
+                               <td>
+                                   <span t-esc="c_value['revenue_expense']"/>
+                                </td>
+                               <td class="text-right">
+                                   <span t-esc="c_value['amount_untaxed']"/>
+                                </td>
+                               <!--t-field-options='{"widget": "monetary", "display_currency": "o.pricelist_id.currency_id"}'-->
+                               <td class="text-right">
+                                   <span t-esc="c_value['amount_total']"/>
+                                </td>
+                               <td>
+                                   <span t-esc="c_value['state']"/>
+                                </td>
+                               <!--<td>-->
+                                   <!--<span t-esc="c_value['nfe_access_key']"/>-->
+                                <!--</td>-->
+                               <!--<td>-->
+                                   <!--<span t-esc="c_value['nfe_status']"/>-->
+                                <!--</td>-->
+                           </tr>
+                        </tbody>
+                    </table>
+
+                <div class="row">
+                <div class="col-xs-4 pull-right">
+                    <table class="table table-condensed">
+                        <tr class="border-black" t-foreach="docs_computed[o.id]['header']" t-as="h">
+                            <td><strong>Total Without Taxes</strong></td>
+                            <td class="text-right">
+                                <span t-esc="h_value['amount_gross']"/>
+                            </td>
+                        </tr>
+                        <tr class="border-black" t-foreach="docs_computed[o.id]['header']" t-as="h">
+                            <td><strong>Total</strong></td>
+                            <td class="text-right">
+                                <span t-esc="h_value['amount_total']"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+                  </div>
+                </t>
+            </t>
+        </t>
+        </template>
+    </data>
+</openerp>

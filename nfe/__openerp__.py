@@ -39,6 +39,8 @@
         sudo pip install geraldo
     """,
     'depends': [
+        'report_xls',
+        'account_cancel',
         'l10n_br_account_product',
     ],
     'data': [
@@ -52,6 +54,8 @@
         'views/res_partner_view.xml',
         'views/res_company_view.xml',
         'report/report_print_button_view.xml',
+        'report/report_nfe_invoice_instance.xml',
+        'wizard/nfe_invoice_report.xml',
     ],
     'demo': [],
     'test': [],
