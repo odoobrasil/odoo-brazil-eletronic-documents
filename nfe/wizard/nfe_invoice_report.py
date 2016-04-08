@@ -178,6 +178,7 @@ class NfeInvoiceReportWizard(models.TransientModel):
                     'date': invoice.date_invoice or '-',
                     'type': OPERATION_TYPE[invoice.type] or '-',
                     'partner': invoice.partner_id.legal_name or '-',
+                    'cnpj_cpf': invoice.partner_id.cnpj_cpf or '-',
                     'fiscal_category': (invoice.fiscal_category_id and
                                         invoice.fiscal_category_id.code or ''),
                     'revenue_expense': REVENUE_EXPENSE[

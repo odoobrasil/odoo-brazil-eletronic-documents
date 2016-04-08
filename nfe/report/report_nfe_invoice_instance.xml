@@ -20,13 +20,14 @@
                                 <strong>c/ financeiro</strong>
                             </div>
                         </div>
-                    <table class="table table-condensed">
+                    <table class="table table-condensed table-striped" style="font-size:8px">
                         <thead>
                             <tr>
                                 <th>Nº</th>
                                 <th>Date</th>
                                 <th>Tipo</th>
-                                <th>Parceiro</th>
+                                <th>Razão Social</th>
+                                <th>CNPJ/CPF</th>
                                 <th>Categoria Fiscal</th>
                                 <th>Financeiro</th>
                                 <th>Valor</th>
@@ -49,6 +50,9 @@
                                 </td>
                                <td>
                                    <span t-esc="c_value['partner']"/>
+                                </td>
+                              <td>
+                                   <span t-esc="c_value['cnpj_cpf']"/>
                                 </td>
                                <td>
                                    <span t-esc="c_value['fiscal_category']"/>
