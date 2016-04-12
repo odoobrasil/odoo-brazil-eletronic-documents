@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2015 TrustCode - www.trustcode.com.br                         #
+# Copyright (C) 2015 Trustcode - www.trustcode.com.br                         #
 #    Authors: Luis Felipe Mileo                                               #
 #            Fernando Marcato Rodrigues                                       #
 #            Daniel Sadamo Hirayama                                           #
