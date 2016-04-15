@@ -183,7 +183,8 @@ class NfeInvoiceReportWizard(models.TransientModel):
                                         invoice.fiscal_category_id.code or ''),
                     'revenue_expense': REVENUE_EXPENSE[
                         invoice.journal_id.revenue_expense],
-                    'amount_gross': invoice.amount_untaxed or '-',
+                    'amount_gross': invoice.amount_gross or '-',
+                    'amount_untaxed': invoice.amount_untaxed or '-',
                     'amount_total': invoice.amount_total or '-',
                     'state': INVOICE_STATE_SRING[invoice.state] or '-',
                     # 'nfe_access_key': invoice.nfe_access_key or '-',
