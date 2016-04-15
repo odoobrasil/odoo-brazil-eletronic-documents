@@ -103,9 +103,9 @@ class NfeInvoiceReportWizard(models.TransientModel):
     search_order = fields.Selection(
         selection=[
             ('internal_number', u'Numero da Fatura'),
-            ('data', u'Data'),
+            ('date_due', u'Data'),
             ('fiscal_type', u'Tipo fiscal'),
-            ('operation_type', u'Tipo de Operação'),
+            ('type', u'Tipo de Operação'),
             ('issuer', u'Emitente'),
             ('state', u'Situação'),
         ],
