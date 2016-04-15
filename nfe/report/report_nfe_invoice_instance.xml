@@ -61,7 +61,7 @@
                                    <span t-esc="c_value['revenue_expense']"/>
                                 </td>
                                <td class="text-right">
-                                   <span t-esc="c_value['amount_gross']"/>
+                                   <span t-esc="c_value['amount_untaxed']"/>
                                 </td>
                                <!--t-field-options='{"widget": "monetary", "display_currency": "o.pricelist_id.currency_id"}'-->
                                <td class="text-right">
