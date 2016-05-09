@@ -31,6 +31,7 @@ INVOICE_STATE = [
     ('proforma2', u'Pro-forma'),
     ('open', u'Open'),
     ('paid', u'Paid'),
+    ('open_and_paid', u'Open and Paid'),
     ('cancel', u'Cancelled'),
     ('sefaz_export', u'Enviar para Receita'),
     ('sefaz_exception', u'Erro de autorização da Receita'),
@@ -143,7 +144,12 @@ class NfeInvoiceReportWizard(models.TransientModel):
             domain.append(
                 ('fiscal_category_id', 'in', fiscal_category_ids.ids))
         if self.state:
-            domain.append(('state', '=', self.state))
+            if self.state == "open_and_paid":
+                domain.append('|')
+                domain.append(('state', '=', 'open'))
+                domain.append(('state', '=', 'paid'))
+            else:
+                domain.append(('state', '=', self.state))
         if self.operation_type:
             domain.append(
                 ('type', '=', self.operation_type))
