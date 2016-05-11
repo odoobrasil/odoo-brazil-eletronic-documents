@@ -11,6 +11,15 @@
           <field name="auto" eval="False"/>
         </record>
 
+        <record id="faturamento_xls_export" model="ir.actions.report.xml">
+	      <field name="name">Relatorio de faturamento em XLS</field>
+	      <field name="model">nfe.invoice.report</field>
+	      <field name="type">ir.actions.report.xml</field>
+	      <field name="report_name">wizard.nfe.faturamento</field>
+	      <field name="report_type">xls</field>
+	      <field name="auto" eval="False"/>
+	    </record>
+
         <record id="nfe_invoice_report_wizard_view" model="ir.ui.view">
             <field name="name">Relatorio de faturamento</field>
             <field name="model">nfe.invoice.report</field>
@@ -39,6 +48,11 @@
                     </notebook>
 					<footer>
                         <button icon="gtk-print" name="%(qweb_pdf_export)d" string="Print" type="action" colspan="2"/>
+                        <button icon="gtk-execute"
+                                name="%(faturamento_xls_export)d"
+                                string="Export XLS"
+                                type="action"
+                                colspan="2"/>
 						<button special="cancel" string="Cancel" type="object" class="oe_link"/>
 					</footer>
 				</form>
