@@ -21,15 +21,14 @@
 
 
 import os
-import base64
 import re
 import string
 import logging
 from PIL import Image
 from StringIO import StringIO
 from pyPdf import PdfFileReader, PdfFileWriter
-
-from pysped.nfe import ProcessadorNFe
+from .certificado import Certificado
+from .processor import ProcessadorNFe
 from pysped.nfe.danfe import DANFE
 
 
@@ -38,11 +37,10 @@ _logger = logging.getLogger(__name__)
 
 def __processo(company):
 
-    p = ProcessadorNFe()
+    p = ProcessadorNFe(company)
     p.ambiente = int(company.nfe_environment)
     p.estado = company.partner_id.l10n_br_city_id.state_id.code
-    p.certificado.stream_certificado = base64.decodestring(company.nfe_a1_file)
-    p.certificado.senha = company.nfe_a1_password
+    p.certificado = Certificado(company)
     p.salvar_arquivos = True
     p.contingencia_SCAN = False
     p.caminho = company.nfe_export_folder
