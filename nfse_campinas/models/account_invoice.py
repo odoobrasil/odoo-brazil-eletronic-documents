@@ -20,9 +20,14 @@
 ###############################################################################
 
 
+import monthdelta
+from datetime import datetime, timedelta
+from datetime import date
 from lxml import etree
 from openerp import api, fields, models
 from openerp.exceptions import Warning
+from openerp.tools import DEFAULT_SERVER_DATE_FORMAT,\
+    DEFAULT_SERVER_DATETIME_FORMAT
 
 FIELD_STATE = {'draft': [('readonly', False)]}
 
@@ -125,3 +130,17 @@ class AccountInvoice(models.Model):
                 nodes[0].set("domain", "[('id', '=', %s)]" % str(ids))
                 res['arch'] = etree.tostring(doc)
         return res
+
+    def pay_date(self):
+        date_emition = datetime.strptime(self.date_hour_invoice,
+                                         DEFAULT_SERVER_DATETIME_FORMAT)
+        end_date = date_emition + monthdelta.monthdelta(1)
+        new_date = date(end_date.year, end_date.month, 10)
+        if new_date.weekday() == 5:
+            new_date = end_date + timedelta(days=1)
+        if new_date.weekday() == 6:
+            new_date = end_date + timedelta(days=2)
+        format = "%d/%m/%Y"
+        new_date = datetime.strftime(new_date, format)
+
+        return new_date
