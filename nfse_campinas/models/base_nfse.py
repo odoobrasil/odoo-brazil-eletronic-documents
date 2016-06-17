@@ -110,12 +110,14 @@ class BaseNfse(models.TransientModel):
                         self.invoice_id.status_send_nfse = 'enviado'
                         self.invoice_id.lote_nfse = resp[
                             '{}Cabecalho'].NumeroLote
+                        contador = 0
                         while True:
                             time.sleep(2)
                             result = self.check_nfse_by_lote()
                             result['files'] = status[
                                 'files'] + result['files']
-                            if result['status'] != 203:
+                            contador += 1
+                            if result['status'] != 203 or contador > 120:
                                 break
 
                         if result['status'] == '-100':

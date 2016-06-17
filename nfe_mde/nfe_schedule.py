@@ -155,12 +155,12 @@ class nfe_schedule(models.TransientModel):
                             'res_id': obj.id
                         })
 
-            except Exception as ex:
+            except Exception:
                 _logger.error("Erro ao consultar Manifesto", exc_info=True)
                 if raise_error:
                     raise UserError(
                         u'Atenção',
-                        u'Não foi possivel efetuar a consulta!\n Verifique o log')
+                        u'Não foi possivel efetuar a consulta!\nCheque o log')
 
     @api.one
     def execute_download(self):
