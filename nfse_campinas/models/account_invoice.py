@@ -20,9 +20,8 @@
 ###############################################################################
 
 
-import monthdelta
-from datetime import datetime, timedelta
-from datetime import date
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from lxml import etree
 from openerp import api, fields, models
 from openerp.exceptions import Warning
@@ -131,16 +130,15 @@ class AccountInvoice(models.Model):
                 res['arch'] = etree.tostring(doc)
         return res
 
-    def pay_date(self):
+    def issqn_due_date(self):
         date_emition = datetime.strptime(self.date_hour_invoice,
                                          DEFAULT_SERVER_DATETIME_FORMAT)
-        end_date = date_emition + monthdelta.monthdelta(1)
-        new_date = date(end_date.year, end_date.month, 10)
-        if new_date.weekday() == 5:
-            new_date = end_date + timedelta(days=1)
-        if new_date.weekday() == 6:
-            new_date = end_date + timedelta(days=2)
+        next_month = date_emition + relativedelta(months=1)
+        due_date = date(next_month.year, next_month.month, 10)
+        if due_date.weekday() >= 5:
+            while due_date.weekday() != 0:
+                due_date = due_date + timedelta(days=1)
         format = "%d/%m/%Y"
-        new_date = datetime.strftime(new_date, format)
+        due_date = datetime.strftime(due_date, format)
 
-        return new_date
+        return due_date
