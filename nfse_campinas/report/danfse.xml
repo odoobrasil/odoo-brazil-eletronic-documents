@@ -295,7 +295,7 @@
 								Descrição da atividade: <span t-field="inv.cnae_id.name" />
 							</div>
 							<div>
-								Data de vencimento do ISSQN referente à esta NFSe: <span t-field="inv.date_due" t-field-options='{"format": "dd/MM/yyyy"}'  />
+								Data de vencimento do ISSQN referente à esta NFSe: <span t-esc="inv.issqn_due_date()" />
 							</div>
 							<div>
 								Serviço: <span t-field="inv.invoice_line[0].service_type_id.code" /> - <span t-field="inv.invoice_line[0].service_type_id.name" />
