@@ -20,8 +20,6 @@
 ###############################################################################
 
 
-import os
-import base64
 import logging
 from openerp import api, fields, models
 from openerp.tools.translate import _

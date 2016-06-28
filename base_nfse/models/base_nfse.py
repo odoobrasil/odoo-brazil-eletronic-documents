@@ -24,15 +24,13 @@ import requests
 import suds.client
 import suds_requests
 from uuid import uuid4
-from lxml import etree
 from ..service.certificate import converte_pfx_pem
 from openerp import api, fields, models
 
 
-
 class BaseNfse(models.Model):
     _name = 'base.nfse'
-    
+
     def _company_certificate(self):
         for item in self:
             item.certificate = self.env.user.company_id.nfe_a1_file
@@ -65,23 +63,21 @@ class BaseNfse(models.Model):
         Returns:
             dict: retorna um dicionário com os dados da nfse
          """
-        return None     
-      
+        return None
 
     def _validate_result(self, result):
         pass
-    
-    def _save_pfx_certificate(self):  
-        pfx_tmp = '/tmp/' + uuid4().hex               
-        arq_temp = open(pfx_tmp, 'w')        
+
+    def _save_pfx_certificate(self):
+        pfx_tmp = '/tmp/' + uuid4().hex
+        arq_temp = open(pfx_tmp, 'w')
         arq_temp.write(base64.b64decode(self.certificate))
         arq_temp.close()
-        return pfx_tmp    
-    
-    
-    def _preparar_temp_pem(self):       
+        return pfx_tmp
+
+    def _preparar_temp_pem(self):
         chave_temp = '/tmp/' + uuid4().hex
-        certificado_temp = '/tmp/' + uuid4().hex        
+        certificado_temp = '/tmp/' + uuid4().hex
 
         pfx_tmp = self._save_pfx_certificate()
 
@@ -100,27 +96,27 @@ class BaseNfse(models.Model):
         cache_location = '/tmp/suds'
         cache = suds.cache.DocumentCache(location=cache_location)
 
-        session = requests.Session()        
+        session = requests.Session()
 
         return suds.client.Client(
             base_url,
             cache=cache,
             transport=suds_requests.RequestsTransport(session)
-        )        
-            
+        )
+
     @api.multi
     def send_rps(self):
         pass
-    
+
     @api.multi
     def cancel_nfse(self):
-        pass        
-        
+        pass
+
     @api.multi
     def check_nfse_by_rps(self):
         pass
-    
-    @api.multi    
+
+    @api.multi
     def check_nfse_by_lote(self):
         pass
 

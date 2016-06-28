@@ -30,7 +30,7 @@
 		<record id="tras_router_open" model="workflow.transition">
 			<field name="act_from" ref="l10n_br_account_product.act_router" />
 			<field name="act_to" ref="act_nfse_ready" />
-			<field name="condition">fiscal_document_electronic == False and fiscal_type == 'service' and issuer == '0'</field>
+			<field name="condition">fiscal_document_electronic == True and fiscal_type == 'service' and issuer == '0'</field>
 		</record>
 
 		<record id="account.t4" model="workflow.transition">

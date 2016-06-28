@@ -28,7 +28,7 @@ import logging
 import unicodedata
 from lxml import objectify
 from datetime import datetime
-from openerp import api, fields, models, tools
+from openerp import api, models, tools
 from openerp.exceptions import Warning as UserError
 
 from openerp.addons.base_nfse.service.xml import render
@@ -36,7 +36,6 @@ from openerp.addons.base_nfse.service.signature import Assinatura
 
 
 _logger = logging.getLogger(__name__)
-
 
 
 class BaseNfse(models.TransientModel):
@@ -212,7 +211,6 @@ class BaseNfse(models.TransientModel):
                 response = response.replace(
                     '<?xml version="1.0" encoding="UTF-8"?>',
                     '')
-                print response
                 resp = objectify.fromstring(response)
                 if resp['{}Cabecalho'].Sucesso:
                     status['status'] = '200'
