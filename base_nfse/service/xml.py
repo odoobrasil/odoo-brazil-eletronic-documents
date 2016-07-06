@@ -41,7 +41,6 @@ def render(base_path, template_path, **kwargs):
 
     # TODO Remover espaços e possíveis tags vazias
     xml = template.render(**kwargs)
-    xml = xml.replace('&', '&amp;')
     parser = etree.XMLParser(remove_blank_text=True, remove_comments=True)
     elem = etree.fromstring(xml, parser=parser)
-    return etree.tostring(elem).replace('&', '&amp;')
+    return etree.tostring(elem)
