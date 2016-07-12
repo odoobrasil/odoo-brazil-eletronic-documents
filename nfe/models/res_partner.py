@@ -80,9 +80,10 @@ class ResPartner(models.Model):
                     'street2': info.get('xCpl', ''),
                     'legal_name': info.get('xNome', ''),
                     'number': info.get('nro', ''),
-                    'l10n_br_city_id': city_id,
-                    'state_id': state_id,
+                    'l10n_br_city_id': city_id.id,
+                    'state_id': state_id.id,
                     'habilitado_sintegra': info['cSit'],
+                    'inscr_est': info.get('IE', False) or ie,
                 }
                 partner.write(result)
         return
