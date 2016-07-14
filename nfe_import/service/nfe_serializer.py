@@ -635,6 +635,7 @@ class NFeSerializer(object):
             'cofins_value': self.nfe.infNFe.total.ICMSTot.vCOFINS.valor,
             'amount_costs': self.nfe.infNFe.total.ICMSTot.vOutro.valor,
             'amount_total': self.nfe.infNFe.total.ICMSTot.vNF.valor,
+            'check_total': self.nfe.infNFe.total.ICMSTot.vNF.valor,
         }
         return total
 
