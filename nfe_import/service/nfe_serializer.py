@@ -119,7 +119,7 @@ class NFeSerializer(object):
         res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
         res['date_in_out'] = datetime.now()
         res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
-        res['nfe_access_key'] = self.nfe.infNFe.Id.valor
+        res['nfe_access_key'] = self.nfe.infNFe.Id.valor[3:]
         res['nat_op'] = self.nfe.infNFe.ide.natOp.valor
         res['ind_final'] = self.nfe.infNFe.ide.indFinal.valor
         res['ind_pres'] = self.nfe.infNFe.ide.indPres.valor
