@@ -128,6 +128,9 @@ class Nfe_Mde(models.Model):
 
         if nfe_result['code'] == '135':
             self.state = 'ciente'
+        elif nfe_result['code'] == '573':
+            self.state = 'ciente'
+            event['response'] = 'Ciência da operação já previamente realizada'
         else:
             event['response'] = 'Ciência da operação sem êxito'
 

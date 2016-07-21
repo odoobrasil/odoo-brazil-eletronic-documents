@@ -93,7 +93,7 @@ def send(company, nfe):
     # Busca a versão da NF a ser emitida, não a do cadastro da empresa
     p.versao = str(nfe[0].infNFe.versao.valor)
     p.danfe.logo = add_backgound_to_logo_image(company)
-    p.danfe.leiaute_logo_vertical = False
+    p.danfe.leiaute_logo_vertical = company.nfe_logo_vertical
     p.danfe.nome_sistema = company.nfe_email or \
         u"""Odoo/OpenERP - Sistema de Gestao Empresarial de Codigo Aberto
         - 100%% WEB - www.openerpbrasil.org"""
@@ -152,6 +152,7 @@ def print_danfe(inv):
     danfe = DANFE()
     danfe.logo = add_backgound_to_logo_image(inv.company_id)
     danfe.NFe = procnfe.NFe
+    danfe.leiaute_logo_vertical = inv.company_id.nfe_logo_vertical
     danfe.protNFe = procnfe.protNFe
     danfe.caminho = "/tmp/"
     danfe.gerar_danfe()
@@ -173,7 +174,7 @@ def print_danfe(inv):
 
 def add_backgound_to_logo_image(company):
     try:
-        logo = company.logo
+        logo = company.nfe_logo or company.logo
         if logo:
             logo_image = Image.open(StringIO(logo.decode('base64')))
             image_path = os.path.join(

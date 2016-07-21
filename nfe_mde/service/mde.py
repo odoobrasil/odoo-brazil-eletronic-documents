@@ -17,12 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
 import re
-import os
 import base64
 import gzip
 import cStringIO
 from pysped.nfe import ProcessadorNFe
-from datetime import datetime
 
 
 def __processo(company):
@@ -43,21 +41,6 @@ def _format_nsu(nsu):
     return "%015d" % (nsu,)
 
 
-def _create_dirs(company):
-    caminho = company.nfe_export_folder
-    ambiente = int(company.nfe_environment)
-    if ambiente == 1:
-        caminho = os.path.join(caminho, 'producao/dfe-resumo/')
-    else:
-        caminho = os.path.join(caminho, 'homologacao/dfe-resumo/')
-    caminho = os.path.join(caminho, datetime.now().strftime('%Y-%m') + '/')
-    try:
-        os.makedirs(caminho)
-    except:
-        pass
-    return caminho
-
-
 def distribuicao_nfe(company, ultimo_nsu):
     ultimo_nsu = _format_nsu(ultimo_nsu)
     p = __processo(company)
@@ -72,7 +55,6 @@ def distribuicao_nfe(company, ultimo_nsu):
                 result.resposta.cStat.valor == '138':
 
             nfe_list = []
-            save_path = _create_dirs(company)
             for doc in result.resposta.loteDistDFeInt.docZip:
                 orig_file_desc = gzip.GzipFile(
                     mode='r',
@@ -159,7 +141,6 @@ def download_nfe(company, list_nfe):
     result = p.baixar_notas_destinadas(
         cnpj=cnpj_partner,
         lista_chaves=list_nfe)
-    import_folder = company.nfe_import_folder
 
     if result.resposta.status == 200:  # Webservice ok
         if result.resposta.cStat.valor == '139':
