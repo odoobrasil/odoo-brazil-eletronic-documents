@@ -71,42 +71,15 @@ class AccountInvoice(models.Model):
     @api.multi
     def action_invoice_send_nfse(self):
         if self.company_id.lote_sequence_id:
-            ir_env = self.env['ir.sequence']
-            lote = ir_env.next_by_id(self.company_id.lote_sequence_id.id)
-            self.lote_nfse = lote
+            if not self.lote_nfse or self.status_send_nfse == 'nao_enviado':
+                ir_env = self.env['ir.sequence']
+                lote = ir_env.next_by_id(self.company_id.lote_sequence_id.id)
+                self.lote_nfse = lote
         else:
             raise Warning(u'Atenção!', u'Configure na empresa a sequência para\
                                         gerar o lote da NFS-e')
 
-        event_obj = self.env['l10n_br_account.document_event']
-        base_nfse = self.env['base.nfse'].create({'invoice_id': self.id,
-                                                  'city_code': '1',
-                                                  'certificate': self.company_id.nfe_a1_file,
-                                                  'password': self.company_id.nfe_a1_password})
-
-        send = base_nfse.send_rps()
-        vals = {
-            'type': '14',
-            'status': send['status'],
-            'company_id': self.company_id.id,
-            'origin': '[NFS-e] {0}'.format(self.internal_number),
-            'message': send['message'],
-            'state': 'done',
-            'document_event_ids': self.id
-        }
-        event = event_obj.create(vals)
-        for xml_file in send['files']:
-            self._attach_files(event.id, 'l10n_br_account.document_event',
-                               xml_file['data'], xml_file['name'])
-
-        if send['success']:
-            self.state = 'open'
-            self.nfse_status = send['status']
-        else:
-            self.state = 'nfse_exception'
-            self.nfse_status = '0 - Erro de autorização (verifique os \
-                                documentos eletrônicos para mais info)'
-
+        return super(AccountInvoice, self).action_invoice_send_nfse()
 
     def fields_view_get(self, cr, uid, view_id=None, view_type='form',
                         context=None, toolbar=False, submenu=False):

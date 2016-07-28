@@ -19,13 +19,16 @@
 #                                                                             #
 ###############################################################################
 
+import re
 import base64
 import requests
 import suds.client
 import suds_requests
 from uuid import uuid4
+from datetime import datetime
 from ..service.certificate import converte_pfx_pem
 from openerp import api, fields, models
+
 
 
 class BaseNfse(models.Model):

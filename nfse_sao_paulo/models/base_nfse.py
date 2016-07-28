@@ -120,9 +120,13 @@ class BaseNfse(models.TransientModel):
     @api.multi
     def send_rps(self):
         self.ensure_one()
-        if self.city_code == '1':  # São Paulo
+        import ipdb; ipdb.set_trace()
+        if self.city_code == '50308':  # São Paulo
             nfse = self._get_nfse_object()
             url = self._url_envio_nfse()
+
+            envio_rps(nfse)
+
             path = os.path.dirname(os.path.dirname(__file__))
             #TODO - Buscar do certificado
 
@@ -310,117 +314,21 @@ class BaseNfse(models.TransientModel):
         return super(BaseNfse, self).check_nfse_by_lote()
 
     @api.multi
-    def print_pdf(self):
-        if self.city_code == '1':
+    def print_pdf(self, invoice):
+        if self.city_code == '50308':  # São Paulo IBGE Code
             return self.env['report'].get_action(
-                self, 'trust_nfse_campinas.danfse_report')
+                invoice, 'nfse_sao_paulo.danfse_report')
 
     def _url_envio_nfse(self):
-        if self.city_code == '1':  # São Paulo
+        if self.city_code == '50308':  # São Paulo
             return 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx?wsdl'
-        if self.city_code == '6291':  # Campinas
-            return 'http://issdigital.campinas.sp.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '5403':  # Uberlandia
-            return 'http://udigital.uberlandia.mg.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '0427':  # Belem-PA
-            return 'http://www.issdigitalbel.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '9051':  # Campo Grande
-            return 'http://issdigital.pmcg.ms.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '5869':  # Nova Iguaçu
-            return 'http://www.issmaisfacil.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '1219':  # Teresina
-            return 'http://www.issdigitalthe.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '0921':  # São Luis
-            return 'http://www.issdigitalslz.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '7145':  # Sorocaba
-            return 'http://www.issdigitalsod.com.br/WsNFe2/LoteRps.jws?wsdl'
 
     def _get_nfse_object(self):
+        result = super(BaseNfse, self)._get_nfse_object()
         if self.invoice_id:
             inv = self.invoice_id
 
-            phone = inv.partner_id.phone or ''
-            cpf_cnpj = re.sub('[^0-9]', '', inv.partner_id.cnpj_cpf or '')
-            if len(cpf_cnpj) == 11:
-                tipo_cpfcnpj = 1
-            else:
-                tipo_cpfcnpj = 2
-            tomador = {
-                'cpf_cnpj': re.sub('[^0-9]', '', inv.partner_id.cnpj_cpf or ''),
-                'tipo_cpfcnpj': tipo_cpfcnpj,
-                'razao_social': inv.partner_id.legal_name or '',
-                'logradouro': inv.partner_id.street or '',
-                'numero': inv.partner_id.number or '',
-                'complemento': inv.partner_id.street2 or '',
-                'bairro': inv.partner_id.district or 'Sem Bairro',
-                'cidade': '%s%s' % (inv.partner_id.state_id.ibge_code, inv.partner_id.l10n_br_city_id.ibge_code),
-                'cidade_descricao': inv.company_id.partner_id.city or '',
-                'uf': inv.partner_id.state_id.code,
-                'cep': re.sub('[^0-9]', '', inv.partner_id.zip),
-                'tipo_logradouro': 'Rua',
-                'tipo_bairro': 'Normal',
-                'ddd': re.sub('[^0-9]', '', phone.split(' ')[0]),
-                'telefone': re.sub('[^0-9]', '', phone.split(' ')[1]),
-                'inscricao_municipal': inv.partner_id.inscr_mun or '',
-                'email': inv.partner_id.email or '',
-            }
-
-            phone = inv.partner_id.phone or ''
-            prestador = {
-                'cnpj': re.sub('[^0-9]', '', inv.company_id.partner_id.cnpj_cpf or ''),
-                'razao_social': inv.company_id.partner_id.legal_name or '',
-                'inscricao_municipal': re.sub('[^0-9]', '', inv.company_id.partner_id.inscr_mun or ''),
-                'cod_municipio': '%s%s' % (inv.company_id.partner_id.state_id.ibge_code, inv.company_id.partner_id.l10n_br_city_id.ibge_code),
-                'cidade': inv.company_id.partner_id.city or '',
-                'tipo_logradouro': 'Rua',
-                'ddd': re.sub('[^0-9]', '', phone.split(' ')[0]),
-                'telefone': re.sub('[^0-9]', '', phone.split(' ')[1]),
-                'email': inv.company_id.partner_id.email or '',
-            }
-
-            aliquota_pis = 0.0
-            aliquota_cofins = 0.0
-            aliquota_csll = 0.0
-            aliquota_inss = 0.0
-            aliquota_ir = 0.0
-            aliquota_issqn = 0.0
-            deducoes = []
-            itens = []
-            for inv_line in inv.invoice_line:
-                item = {
-                    'descricao': inv_line.product_id.name[:80] or '',
-                    'quantidade': str("%.4f" % inv_line.quantity),
-                    'valor_unitario': str("%.4f" % (inv_line.price_unit)),
-                    'valor_total': str("%.2f" % (inv_line.quantity * inv_line.price_unit)),
-                }
-                itens.append(item)
-                aliquota_pis = inv_line.pis_percent
-                aliquota_cofins = inv_line.cofins_percent
-                #aliquota_csll = inv_line.csll_percent
-                #aliquota_inss = inv_line.inss_percent
-                #aliquota_ir = inv_line.ir_percent
-                #aliquota_issqn = inv_line.issqn_percent
-                #csll_value = inv.csll_value
-                #inss_value = inv.inss_value
-                #ir_value = inv.ir_value
-                csll_value = 0.0
-                inss_value = 0.0
-                ir_value = 0.0
-
-            valor_servico = inv.amount_total
-            valor_deducao = 0.0
-            codigo_atividade = re.sub('[^0-9]', '', inv.cnae_id.code or '')
-            tipo_recolhimento = 'T' # T – Tributado em São Paulo
-
-            data_envio = datetime.strptime(
-                inv.date_in_out,
-                tools.DEFAULT_SERVER_DATETIME_FORMAT)
-            data_envio = data_envio.strftime('%Y%m%d')
-
-            print tomador['cpf_cnpj']
-            cnpj_cpf = int(tomador['cpf_cnpj'])
-            # TODO verificar se há iss retido
-            iss_retido = 'N'
+            tipo_recolhimento = 'T'  # T – Tributado em São Paulo
             assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s3%sN') % (
                 str(prestador['inscricao_municipal']).zfill(8),
                 inv.document_serie_id.code.ljust(5),
@@ -435,57 +343,11 @@ class BaseNfse(models.TransientModel):
                 str(cnpj_cpf).zfill(14),
                 str('').zfill(14)
                 )
-
             assinatura = hashlib.sha1(assinatura).hexdigest()
             if not tomador['cidade_descricao']:
                 desc = 'Teste de Envio de Arquivo'
-            rps = [{
-                'descricao': 'RPS DE TESTE',
-                'assinatura': assinatura,
-                'tomador': tomador,
-                'prestador': prestador,
-                'serie': inv.document_serie_id.code or '',
-                'numero': inv.internal_number or '',
-                'data_emissao': "%s-%s-%s" % (inv.date_in_out[:4],inv.date_in_out[5:7], inv.date_in_out[8:10]),
-                'situacao': 'N',
-                'serie_prestacao': '99',
-                'codigo_atividade': codigo_atividade,
-                'aliquota_atividade': str("%.2f" % aliquota_issqn),
-                'tipo_recolhimento': tipo_recolhimento,
-                'municipio_prestacao': tomador['cidade'],
-                'municipio_descricao_prestacao': tomador['cidade_descricao'],
-                'operacao': inv.operation,
-                'tributacao': inv.taxation,
-                'valor_pis': str("%.2f" % inv.pis_value),
-                'valor_cofins': str("%.2f" % inv.cofins_value),
-                'valor_csll': str("%.2f" % csll_value),
-                'valor_inss': str("%.2f" % inss_value),
-                'valor_ir': str("%.2f" % ir_value),
-                'aliquota_pis': aliquota_pis,
-                'aliquota_cofins': aliquota_cofins,
-                'aliquota_csll': aliquota_csll,
-                'aliquota_inss': aliquota_inss,
-                'aliquota_ir': aliquota_ir,
-                'deducoes': deducoes,
-                'itens': itens,
-            }]
 
-            nfse_object = {
-                'cidade': '1',
-                'cpf_cnpj': prestador['cnpj'],
-                'remetente': prestador['razao_social'],
-                'transacao': inv.transaction,
-                'data_inicio': datetime.now(),
-                'data_fim': datetime.now(),
-                'total_rps': '1',
-                'total_servicos': str("%.2f" % inv.amount_total),
-                'total_deducoes': '0.00',
-                'lote_id': 'lote:%s' % inv.lote_nfse,
-                'lista_rps': rps
-            }
-            return nfse_object
-        return None
-
+        return result
 
     def _valida_schema(self, xml, arquivo_xsd):
         '''Função que valida um XML usando lxml do Python via arquivo XSD'''

@@ -264,11 +264,13 @@ class AccountInvoice(models.Model):
     @api.multi
     def cancel_nfse_online(self):
         event_obj = self.env['l10n_br_account.document_event']
-        base_nfse = self.env['base.nfse'].create({'invoice_id': self.id,
-                                                  'company_id': self.company_id.id,
-                                                  'city_code': '6291',
-                                                  'certificate': self.company_id.nfe_a1_file,
-                                                  'password': self.company_id.nfe_a1_password})
+        base_nfse = self.env['base.nfse'].create({
+            'invoice_id': self.id,
+            'company_id': self.company_id.id,
+            'city_code': self.company_id.l10n_br_city_id.ibge_code,
+            'certificate': self.company_id.nfe_a1_file,
+            'password': self.company_id.nfe_a1_password
+        })
 
         cancelamento = base_nfse.cancel_nfse()
         vals = {
@@ -290,7 +292,8 @@ class AccountInvoice(models.Model):
 
     @api.multi
     def invoice_print_nfse(self):
-        base_nfse = self.env['base.nfse'].create({'invoice_id': self.id,
-                                                  'city_code': '6291'})
-
+        base_nfse = self.env['base.nfse'].create({
+            'invoice_id': self.id,
+            'city_code': self.company_id.l10n_br_city_id.ibge_code
+        })
         return base_nfse.print_pdf(self)
