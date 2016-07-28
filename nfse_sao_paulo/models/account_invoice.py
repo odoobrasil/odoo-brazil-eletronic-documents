@@ -30,18 +30,18 @@ FIELD_STATE = {'draft': [('readonly', False)]}
 class AccountInvoice(models.Model):
     _inherit = 'account.invoice'
 
-    operation = fields.Selection([('T', u"Tributado em São Paulo"),
-                                  ('F', u"Tributado Fora de São Paulo"),
-                                  ('A', u"Tributado em São Paulo, porém isento"),
-                                  ('B', u"Tributado Fora de São Paulo, porém isento"),
-                                  ('M', u"Tributado em São Paulo, porém Imune"),
-                                  ('N', u"Tributado Fora de São Paulo, porém Imune"),
-                                  ('X', u"Tributado em São Paulo, porém Exigibilidade Suspensa"),
-                                  ('V', u"Tributado Fora de São Paulo, porém Exigibilidade Suspensa"),
-                                  ('P', u"Exportação de Serviços"),
-                                  ('C', u"Cancelado")], u"Operação",
-                                 default='T', readonly=True,
-                                 states=FIELD_STATE)
+    operation = fields.Selection(
+        [('T', u"Tributado em São Paulo"),
+         ('F', u"Tributado Fora de São Paulo"),
+         ('A', u"Tributado em São Paulo, porém isento"),
+         ('B', u"Tributado Fora de São Paulo, porém isento"),
+         ('M', u"Tributado em São Paulo, porém Imune"),
+         ('N', u"Tributado Fora de São Paulo, porém Imune"),
+         ('X', u"Tributado em São Paulo, porém Exigibilidade Suspensa"),
+         ('V', u"Tributado Fora de São Paulo, porém Exigibilidade Suspensa"),
+         ('P', u"Exportação de Serviços"),
+         ('C', u"Cancelado")], u"Operação",
+        default='T', readonly=True, states=FIELD_STATE)
 
     taxation = fields.Selection([('C', u"Isenta de ISS"),
                                  ('E', u"Não incidência no município"),
@@ -62,6 +62,11 @@ class AccountInvoice(models.Model):
     transaction = fields.Char(u'Transação', size=60,
                               readonly=True, states=FIELD_STATE)
 
+    @api.multi
+    def _hook_validation(self):
+        res = super(AccountInvoice, self)._hook_validation()
+        # TODO Validações para São Paulo
+        return res
 
     @api.multi
     def action_invoice_send_nfse(self):
@@ -122,4 +127,3 @@ class AccountInvoice(models.Model):
                 nodes[0].set("domain", "[('id', '=', %s)]" % str(ids))
                 res['arch'] = etree.tostring(doc)
         return res
-

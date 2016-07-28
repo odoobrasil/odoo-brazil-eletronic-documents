@@ -26,6 +26,11 @@ import hashlib
 import urllib2, httplib, socket
 import logging
 import suds
+
+from pytrustnfe.nfse.paulistana import envio_rps
+from pytrustnfe.nfse.paulistana import cancelamento_nfe
+
+
 from lxml import etree
 from datetime import datetime
 from openerp import api, fields, models, tools

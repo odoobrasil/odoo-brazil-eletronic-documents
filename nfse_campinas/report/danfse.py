@@ -27,14 +27,13 @@ class DanfseReport(models.AbstractModel):
     _name = 'report.nfse_campinas.danfse_report'
 
     @api.multi
-    def render_html(self, data=None):        
-        print self
+    def render_html(self, data=None):
         report_obj = self.env['report']
         report = report_obj._get_report_from_name(
             'nfse_campinas.danfse_report')
-        
+
         nfse = {'numero': '00001'}
-        
+
         docargs = {
             'doc_ids': self._ids,
             'doc_model': report.model,

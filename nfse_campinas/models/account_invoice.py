@@ -85,8 +85,6 @@ class AccountInvoice(models.Model):
 
     cnae_id = fields.Many2one('l10n_br_account.cnae', string=u"CNAE",
                               readonly=True, states=FIELD_STATE)
-    lote_nfse = fields.Char(
-        u'Lote', size=20, readonly=True, states=FIELD_STATE)
     transaction = fields.Char(u'Transação', size=60,
                               readonly=True, states=FIELD_STATE)
     verify_code = fields.Char(u'Código Verificação', size=60,
@@ -96,6 +94,13 @@ class AccountInvoice(models.Model):
         [('nao_enviado', 'Não enviado'),
          ('enviado', 'Enviado porém com problemas na consulta')],
         'Status de Envio NFSe', default='nao_enviado')
+
+    @api.multi
+    def _hook_validation(self):
+        res = super(AccountInvoice, self)._hook_validation()
+        if not self.cnae_id:
+            res.append(u'Fatura / CNAE')
+        return res
 
     @api.multi
     def action_invoice_send_nfse(self):
