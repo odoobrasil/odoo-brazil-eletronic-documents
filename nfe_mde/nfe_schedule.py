@@ -16,11 +16,15 @@
 # You should have received a copy of the GNU Affero General Public License    #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
+
+import re
+import base64
 import logging
 from lxml import objectify
 from datetime import datetime
 from .service.mde import distribuicao_nfe
 from openerp import models, api, fields
+from openerp.exceptions import Warning as UserError
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
 
@@ -36,8 +40,17 @@ class nfe_schedule(models.TransientModel):
         default='init'
     )
 
+    @staticmethod
+    def _mask_cnpj(cnpj):
+        if cnpj:
+            val = re.sub('[^0-9]', '', cnpj)
+            if len(val) == 14:
+                cnpj = "%s.%s.%s/%s-%s" % (val[0:2], val[2:5], val[5:8],
+                                           val[8:12], val[12:14])
+        return cnpj
+
     @api.model
-    def schedule_download(self):
+    def schedule_download(self, raise_error=False):
         companies = self.env['res.company'].search([])
         for company in companies:
             try:
@@ -51,7 +64,6 @@ class nfe_schedule(models.TransientModel):
                     event = {
                         'type': '12', 'company_id': company.id,
                         'response': 'Consulta distribuição: sucesso',
-                        'file_returned': nfe_result['file_returned'],
                         'status': nfe_result['code'],
                         'message': nfe_result['message'],
                         'create_date': datetime.now(),
@@ -60,25 +72,57 @@ class nfe_schedule(models.TransientModel):
                         'state': 'done', 'origin': 'Scheduler Download'
                     }
 
-                    env_events.create(event)
+                    obj = env_events.create(event)
+                    self.env['ir.attachment'].create(
+                        {
+                            'name': u"Consulta manifesto - {0}".format(
+                                company.cnpj_cpf),
+                            'datas': base64.b64encode(
+                                nfe_result['file_returned']),
+                            'datas_fname': u"Consulta manifesto - {0}".format(
+                                company.cnpj_cpf),
+                            'description': u'Consulta distribuição: sucesso',
+                            'res_model': 'l10n_br_account.document_event',
+                            'res_id': obj.id
+                        })
+
                     env_mde = self.env['nfe.mde']
 
                     for nfe in nfe_result['list_nfe']:
                         if nfe['schema'] == 'resNFe_v1.00.xsd':
                             root = objectify.fromstring(nfe['xml'])
+                            cnpj_forn = self._mask_cnpj(('%014d' % root.CNPJ))
+
+                            partner = self.env['res.partner'].search(
+                                [('cnpj_cpf', '=', cnpj_forn)])
 
                             invoice_eletronic = {
-                                'file_path': nfe['path'], 'chNFe': root.chNFe,
+                                'chNFe': root.chNFe,
                                 'nSeqEvento': nfe['NSU'], 'xNome': root.xNome,
-                                'tpNF': root.tpNF, 'vNF': root.vNF,
-                                'cSitNFe': root.cSitNFe, 'state': 'pending',
+                                'tpNF': str(root.tpNF), 'vNF': root.vNF,
+                                'cSitNFe': str(root.cSitNFe),
+                                'state': 'pending',
                                 'dataInclusao': datetime.now(),
-                                'CNPJ': root.CNPJ, 'IE': root.IE,
+                                'CNPJ': cnpj_forn,
+                                'IE': root.IE,
+                                'partner_id': partner.id,
+                                'dEmi': datetime.strptime(str(root.dhEmi)[:19],
+                                                          '%Y-%m-%dT%H:%M:%S'),
                                 'company_id': company.id,
                                 'formInclusao': u'Verificação agendada'
                             }
 
-                            env_mde.create(invoice_eletronic)
+                            obj_nfe = env_mde.create(invoice_eletronic)
+                            file_name = 'resumo_nfe-%s.xml' % nfe['NSU']
+                            self.env['ir.attachment'].create(
+                                {
+                                    'name': file_name,
+                                    'datas': base64.b64encode(nfe['xml']),
+                                    'datas_fname': file_name,
+                                    'description': u'NFe via manifesto',
+                                    'res_model': 'nfe.mde',
+                                    'res_id': obj_nfe.id
+                                })
 
                         company.last_nsu_nfe = nfe['NSU']
                 else:
@@ -97,10 +141,27 @@ class nfe_schedule(models.TransientModel):
                         'state': 'done', 'origin': 'Scheduler Download'
                     }
 
-                    env_events.create(event)
-            except Exception as ex:
-                _logger.error(str(ex), exc_info=True)
+                    obj = env_events.create(event)
+                    self.env['ir.attachment'].create(
+                        {
+                            'name': u"Consulta manifesto - {0}".format(
+                                company.cnpj_cpf),
+                            'datas': base64.b64encode(
+                                nfe_result['file_returned']),
+                            'datas_fname': u"Consulta manifesto - {0}".format(
+                                company.cnpj_cpf),
+                            'description': u'Consulta manifesto com erro',
+                            'res_model': 'l10n_br_account.document_event',
+                            'res_id': obj.id
+                        })
+
+            except Exception:
+                _logger.error("Erro ao consultar Manifesto", exc_info=True)
+                if raise_error:
+                    raise UserError(
+                        u'Atenção',
+                        u'Não foi possivel efetuar a consulta!\nCheque o log')
 
     @api.one
     def execute_download(self):
-        self.schedule_download()
+        self.schedule_download(raise_error=True)

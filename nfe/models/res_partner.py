@@ -65,10 +65,6 @@ class ResPartner(models.Model):
                         _("Erro ao se comunicar com o SEFAZ"),
                         _("%s - %s") % (info.get('cStat', ''),
                                         info.get('xMotivo', '')))
-                if info['cSit'] not in ('1',):
-                    raise orm.except_orm(
-                        _("Situação Cadastral Vigente:"),
-                        _("NÃO HABILITADO"))
 
                 city_id = state_id = None
                 if "cMun" in info:
@@ -77,7 +73,6 @@ class ResPartner(models.Model):
                     state_id = self.env['res.country.state'].search(
                         [('ibge_code', '=', info['cMun'][:2]),
                          ('country_id.code', '=', 'BR')])[0]
-
                 result = {
                     'district': info.get('xBairro', ''),
                     'street': info.get('xLgr', ''),
@@ -85,9 +80,10 @@ class ResPartner(models.Model):
                     'street2': info.get('xCpl', ''),
                     'legal_name': info.get('xNome', ''),
                     'number': info.get('nro', ''),
-                    'l10n_br_city_id': city_id,
-                    'state_id': state_id,
+                    'l10n_br_city_id': city_id.id,
+                    'state_id': state_id.id,
                     'habilitado_sintegra': info['cSit'],
+                    'inscr_est': info.get('IE', False) or ie,
                 }
                 partner.write(result)
         return

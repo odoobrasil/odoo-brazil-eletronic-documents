@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<record id="trust_nfse_campinas_account_invoice_form" model="ir.ui.view">
+			<field name="name">trust_nfse_campinas.account.invoice.form</field>
+			<field name="model">account.invoice</field>
+			<field name="inherit_id" ref="l10n_br_account.view_l10n_br_account_invoice_form" />
+			<field name="arch" type="xml">
+				<button name="invoice_open" position="after">
+					<button name="button_cancel_nfse" string="Cancelar NFS-e"
+						states="open" groups="base.group_user" type="object" />
+				</button>
+				<field name="fiscal_position" position="after">
+					<field name="state_id"
+						attrs="{'invisible': ['|', ('fiscal_type', '!=', 'service'), ('state', '!=', 'draft')] }" />
+					<field name="provider_city_id" domain="[('state_id', '=', state_id)]"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')], 'required': [('fiscal_type', '==', 'service')] }" />
+					<field name="type_retention"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
+					<field name="operation"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
+					<field name="taxation"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
+					<field name="cnae_id"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')], 'required': [('fiscal_type', '==', 'service')] }" />
+				</field>
+				<field name="internal_number" position="after">
+					<field name="number" string="Número RPS"
+						attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
+				</field>
+			</field>
+		</record>
+
+		<record id="nfse_campinas_account_invoice_line_form" model="ir.ui.view">
+			<field name="name">nfse_campinas.account.invoice.line.form</field>
+			<field name="model">account.invoice.line</field>
+			<field name="inherit_id"
+				ref="l10n_br_account_product.view_l10n_br_account_invoice_line_form" />
+			<field name="arch" type="xml">
+				<field name="service_type_id" position="attributes">
+					<attribute name="attrs">{}</attribute>
+				</field>
+			</field>
+		</record>
+
+	</data>
+</openerp>

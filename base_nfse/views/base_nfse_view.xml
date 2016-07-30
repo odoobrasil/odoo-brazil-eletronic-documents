@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<record id="base_nfse_form_view" model="ir.ui.view">
+			<field name="name">base.nfse.form</field>
+			<field name="model">base.nfse</field>
+			<field name="arch" type="xml">
+				<form string="Base NFS-e">
+					<header>
+						<button name="send_rps" string="Enviar a NFS-e" type="object"
+							class="oe_highlight" />
+						<button name="print_pdf" string="Gerar PDF" type="object"
+							class="oe_highlight" />
+					</header>
+					<group string="Base NFS-e">
+						<field name="name" />
+						<field name="certificate" />
+						<field name="password" />
+						<field name="invoice_id" />
+						<field name="city_code" />
+					</group>
+				</form>
+			</field>
+		</record>
+
+		<record id="base_nfse_tree_view" model="ir.ui.view">
+			<field name="name">base.nfse.tree</field>
+			<field name="model">base.nfse</field>
+			<field name="arch" type="xml">
+				<tree string="NFS-e">
+					<field name="name" />
+					<field name="invoice_id" />
+					<field name="city_code" />				
+				</tree>
+			</field>
+		</record>
+
+	</data>
+</openerp>

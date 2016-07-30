@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+		<record model="ir.ui.view" id="view_nfse_consulta_data_form">
+            <field name="name">nfse.consulta.data.form</field>
+            <field name="model">nfse.consulta.data</field>
+            <field name="arch" type="xml">
+            	<form string="Consultar por data">  
+            		<group>
+            			<field name="data_inicio"/>
+            			<field name="data_final"/>
+            			<field name="nota_inicial"/>     			
+					</group>  
+					<footer> 
+						<button name="action_consultar_notas"
+                                string="Consultar Notas" type="object"
+                                class="oe_highlight" />
+						<button string="Cancelar" special="cancel"/>
+					</footer>         			
+            	</form> 
+            </field>
+        </record>        
+		<record model="ir.actions.act_window" id="action_nfse_consulta_data_form">
+            <field name="name">Consultar notas por data</field>
+            <field name="res_model">nfse.consulta.data</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_nfse_consulta_data_form"/>
+            <field name="target">new</field>
+        </record>	
+        
+        <menuitem name="Consultar NFSe por Data" id="menu_nfse_consulta_data" action="action_nfse_consulta_data_form" parent="l10n_br_account.menu_l10n_br_account_fiscal" />
+        
+	</data>
+</openerp>

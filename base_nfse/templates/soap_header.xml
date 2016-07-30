@@ -1,0 +1,9 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<soap:Header>
+		{% block header %}{% endblock %}
+	</soap:Header>
+	<soap:Body>
+		{% block content %}{% endblock %}
+	</soap:Body>
+</soap:Envelope>

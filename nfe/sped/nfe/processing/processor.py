@@ -45,7 +45,7 @@ class ProcessadorNFe(ProcessadorNFePySped):
         self.estado = company.partner_id.l10n_br_city_id.state_id.code
         self.versao = company.nfe_version
         self.certificado = Certificado(company)
-        self.caminho = company.nfe_root_folder
+        self.caminho = company.nfe_export_folder
         self.salvar_arquivos = False
         self.contingencia_SCAN = False
         self.contingencia = False

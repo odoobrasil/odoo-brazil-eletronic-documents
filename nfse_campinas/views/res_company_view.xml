@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+		<record id="view_nfse_campinas_company_form" model="ir.ui.view">
+			<field name="name">nfse_campinas.res.company.form</field>
+			<field name="model">res.company</field>
+			<field name="inherit_id" ref="l10n_br_account.view_l10n_br_account_company_form"/>
+			<field name="arch" type="xml">
+				<field name="nfse_version" position="after">
+                    <field name="default_operation" />
+                    <field name="default_taxation" />
+				</field>
+			</field>
+		</record>
+	</data>
+</openerp>

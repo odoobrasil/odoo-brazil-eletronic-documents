@@ -23,12 +23,16 @@
 import os
 import re
 import string
+import logging
 from PIL import Image
 from StringIO import StringIO
 from pyPdf import PdfFileReader, PdfFileWriter
 from .certificado import Certificado
 from .processor import ProcessadorNFe
 from pysped.nfe.danfe import DANFE
+
+
+_logger = logging.getLogger(__name__)
 
 
 def __processo(company):
@@ -39,7 +43,7 @@ def __processo(company):
     p.certificado = Certificado(company)
     p.salvar_arquivos = True
     p.contingencia_SCAN = False
-    p.caminho = company.nfe_root_folder
+    p.caminho = company.nfe_export_folder
     return p
 
 
@@ -74,6 +78,8 @@ def check_partner(company, cnpj_cpf, estado=None, ie=None):
                 string.punctuation),
             '',
             cnpj_cpf or ''))
+    if ie and ie.lower() != 'isento':
+        ie = (re.sub('[%s]' % re.escape(string.punctuation), '', ie or ''))
     return p.consultar_cadastro(estado, ie, cnpj_cpf)
 
 
@@ -167,12 +173,22 @@ def print_danfe(inv):
 
 
 def add_backgound_to_logo_image(company):
-    logo = company.nfe_logo or company.logo
-    logo_image = Image.open(StringIO(logo.decode('base64')))
-    image_path = os.path.join(company.nfe_root_folder, 'company_logo.png')
+    try:
+        logo = company.nfe_logo or company.logo
+        if logo:
+            logo_image = Image.open(StringIO(logo.decode('base64')))
+            image_path = os.path.join(
+                company.nfe_export_folder,
+                'company_logo.png')
 
-    bg = Image.new("RGB", logo_image.size, (255, 255, 255))
-    bg.paste(logo_image, logo_image)
-    bg.save(image_path)
+            bg = Image.new(logo_image.mode, logo_image.size, (255, 255, 255))
+            if logo_image.mode == 'RGB':
+                bg.paste(logo_image)
+            else:
+                bg.paste(logo_image, logo_image)
+            bg.save(image_path)
 
-    return image_path
+            return image_path
+    except:
+        _logger.warning(u'Problemas ao carregar a logo', exc_info=True)
+        return None
