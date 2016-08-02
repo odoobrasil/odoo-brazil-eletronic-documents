@@ -21,8 +21,11 @@
 
 
 from lxml import etree
+from datetime import date, datetime
+from dateutil.relativedelta import relativedelta
 from openerp import api, fields, models
 from openerp.exceptions import Warning
+from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 FIELD_STATE = {'draft': [('readonly', False)]}
 
@@ -100,3 +103,16 @@ class AccountInvoice(models.Model):
                 nodes[0].set("domain", "[('id', '=', %s)]" % str(ids))
                 res['arch'] = etree.tostring(doc)
         return res
+
+    def issqn_due_date(self):
+        date_emition = datetime.strptime(self.date_hour_invoice,
+                                         DEFAULT_SERVER_DATETIME_FORMAT)
+        next_month = date_emition + relativedelta(months=1)
+        due_date = date(next_month.year, next_month.month, 10)
+        if due_date.weekday() >= 5:
+            while due_date.weekday() != 0:
+                due_date = due_date + timedelta(days=1)
+        format = "%d/%m/%Y"
+        due_date = datetime.strftime(due_date, format)
+
+        return due_date
