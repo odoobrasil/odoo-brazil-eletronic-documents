@@ -35,6 +35,14 @@ class AccountInvoice(models.Model):
     """account_invoice overwritten methods"""
     _inherit = 'account.invoice'
 
+    def _default_state(self):
+        if self.env.user.company_id.state_id:
+            return self.env.user.company_id.state_id
+
+    def _default_city(self):
+        if self.env.user.company_id.l10n_br_city_id:
+            return self.env.user.company_id.l10n_br_city_id
+
     nfse_status = fields.Char(u'Status NFS-e', size=100)
     state = fields.Selection(selection_add=[
         ('nfse_ready', u'Enviar RPS'),
@@ -42,6 +50,15 @@ class AccountInvoice(models.Model):
         ('nfse_cancelled', u'Cancelada')])
     lote_nfse = fields.Char(
         u'Lote', size=20, readonly=True, states=FIELD_STATE)
+
+    state_id = fields.Many2one('res.country.state', string=u"Estado",
+                               default=_default_state,
+                               domain=[('country_id.code', '=', 'BR')])
+
+    provider_city_id = fields.Many2one('l10n_br_base.city',
+                                       string=u"Munícipio Prestação",
+                                       readonly=True, default=_default_city,
+                                       states=FIELD_STATE)
 
     def _attach_files(self, obj_id, model, data, filename):
         obj_attachment = self.env['ir.attachment']

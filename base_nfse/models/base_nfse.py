@@ -28,7 +28,7 @@ from uuid import uuid4
 from datetime import datetime
 from ..service.certificate import converte_pfx_pem
 from openerp import api, fields, models
-
+from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class BaseNfse(models.Model):
@@ -135,11 +135,10 @@ class BaseNfse(models.Model):
 
         data_envio = datetime.strptime(
             inv.date_in_out,
-            tools.DEFAULT_SERVER_DATETIME_FORMAT)
+            DEFAULT_SERVER_DATETIME_FORMAT)
         data_envio = data_envio.strftime(self.date_format)
 
         rps = [{
-            'assinatura': assinatura,
             'tomador': tomador,
             'prestador': prestador,
             'numero': inv.number or '',

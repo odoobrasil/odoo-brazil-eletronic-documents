@@ -27,7 +27,8 @@ import urllib2, httplib, socket
 import logging
 import suds
 
-from pytrustnfe.nfse.paulistana import envio_rps
+from pytrustnfe.certificado import Certificado
+from pytrustnfe.nfse.paulistana import teste_envio_lote_rps
 from pytrustnfe.nfse.paulistana import cancelamento_nfe
 
 
@@ -120,27 +121,24 @@ class BaseNfse(models.TransientModel):
     @api.multi
     def send_rps(self):
         self.ensure_one()
-        import ipdb; ipdb.set_trace()
         if self.city_code == '50308':  # São Paulo
             nfse = self._get_nfse_object()
-            url = self._url_envio_nfse()
 
-            envio_rps(nfse)
+            pfx_stream = base64.b64decode(self.certificate)
 
-            path = os.path.dirname(os.path.dirname(__file__))
-            #TODO - Buscar do certificado
+            certificado = Certificado(pfx_stream, self.password)
+            teste_envio_lote_rps(certificado, nfse=nfse)
 
+
+            
             t = HTTPSClientCertTransport('/home/carlos/certificado/key2.pem',
                                          '/home/carlos/certificado/cert.pem')
             location = 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
 
             envelope = EnvelopeFixer()
-            client = Client(url, location = location, transport = t, plugins=[envelope])
+            client = Client(url, location=location, transport=t, plugins=[envelope])
 
             xml_send = render(path, 'envio_loterps.xml', nfse=nfse)
-
-            pfx_path = self._save_pfx_certificate()
-            sign = Assinatura(pfx_path, self.password)
 
             reference = ""
             xml_signed = sign.assina_xml(xml_send, reference)
@@ -328,9 +326,17 @@ class BaseNfse(models.TransientModel):
         if self.invoice_id:
             inv = self.invoice_id
 
+            cnpj_cpf = result['lista_rps'][0]['tomador']['cpf_cnpj']
+            data_envio = result['lista_rps'][0]['data_emissao']
+            inscr = result['lista_rps'][0]['prestador']['inscricao_municipal']
+            iss_retido = 0
+            valor_servico = 0
+            valor_deducao = 0
+            tipo_cpfcnpj = 0
+            codigo_atividade = '123'
             tipo_recolhimento = 'T'  # T – Tributado em São Paulo
             assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s3%sN') % (
-                str(prestador['inscricao_municipal']).zfill(8),
+                str().zfill(8),
                 inv.document_serie_id.code.ljust(5),
                 str(inv.internal_number).zfill(12),
                 str(data_envio[0:4] + data_envio[4:6] + data_envio[6:8]),
@@ -344,7 +350,7 @@ class BaseNfse(models.TransientModel):
                 str('').zfill(14)
                 )
             assinatura = hashlib.sha1(assinatura).hexdigest()
-            if not tomador['cidade_descricao']:
+            if not result['lista_rps'][0]['tomador']['cidade_descricao']:
                 desc = 'Teste de Envio de Arquivo'
 
         return result
