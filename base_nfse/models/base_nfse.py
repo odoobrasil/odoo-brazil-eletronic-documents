@@ -83,14 +83,17 @@ class BaseNfse(models.Model):
             return {}
 
         inv = self.invoice_id
+        city_tomador = inv.partner_id.l10n_br_city_id
         tomador = {
+            'tipo_cpfcnpj': 2 if inv.partner_id.is_company else 1,
             'cpf_cnpj': re.sub('[^0-9]', '', inv.partner_id.cnpj_cpf or ''),
             'razao_social': inv.partner_id.legal_name or '',
             'logradouro': inv.partner_id.street or '',
             'numero': inv.partner_id.number or '',
             'complemento': inv.partner_id.street2 or '',
             'bairro': inv.partner_id.district or 'Sem Bairro',
-            'cidade': inv.partner_id.l10n_br_city_id.ibge_code,
+            'cidade': '%s%s' % (city_tomador.state_id.ibge_code,
+                                city_tomador.ibge_code),
             'cidade_descricao': inv.partner_id.l10n_br_city_id.name or '',
             'uf': inv.partner_id.state_id.code,
             'cep': re.sub('[^0-9]', '', inv.partner_id.zip),
@@ -99,14 +102,15 @@ class BaseNfse(models.Model):
                 '[^0-9]', '', inv.partner_id.inscr_mun or ''),
             'email': inv.partner_id.email or '',
         }
+        city_prestador = inv.company_id.partner_id.l10n_br_city_id
         prestador = {
             'cnpj': re.sub(
                 '[^0-9]', '', inv.company_id.partner_id.cnpj_cpf or ''),
             'razao_social': inv.company_id.partner_id.legal_name or '',
             'inscricao_municipal': re.sub(
                 '[^0-9]', '', inv.company_id.partner_id.inscr_mun or ''),
-            'cidade':
-                inv.company_id.partner_id.l10n_br_city_id.ibge_code or '',
+            'cidade': '%s%s' % (city_prestador.state_id.ibge_code,
+                                city_prestador.ibge_code),
             'telefone': re.sub('[^0-9]', '', inv.company_id.phone or ''),
             'email': inv.company_id.partner_id.email or '',
         }

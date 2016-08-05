@@ -46,63 +46,18 @@ class AccountInvoice(models.Model):
          ('C', u"Cancelado")], u"Operação",
         default='T', readonly=True, states=FIELD_STATE)
 
-    taxation = fields.Selection([('C', u"Isenta de ISS"),
-                                 ('E', u"Não incidência no município"),
-                                 ('F', u"Imune"),
-                                 ('K', u"Exigibilidade Susp.Dec.J/Proc.A"),
-                                 ('N', u"Não Tributável"),
-                                 ('T', u"Tributável"),
-                                 ('G', u"Tributável Fixo"),
-                                 ('H', u"Tributável S.N."),
-                                 ('M', u"Micro Empreendedor Individual(MEI)")],
-                                u"Tributação", default='T',
-                                readonly=True, states=FIELD_STATE)
-
-    cnae_id = fields.Many2one('l10n_br_account.cnae', string=u"CNAE",
-                              readonly=True, states=FIELD_STATE)
-    lote_nfse = fields.Char(
-        u'Lote', size=20, readonly=True, states=FIELD_STATE)
-    transaction = fields.Char(u'Transação', size=60,
-                              readonly=True, states=FIELD_STATE)
-
     @api.multi
     def _hook_validation(self):
         res = super(AccountInvoice, self)._hook_validation()
-        # TODO Validações para São Paulo
-        return res
 
-    @api.multi
-    def action_invoice_send_nfse(self):
-        if self.company_id.lote_sequence_id:
-            if not self.lote_nfse or self.status_send_nfse == 'nao_enviado':
-                ir_env = self.env['ir.sequence']
-                lote = ir_env.next_by_id(self.company_id.lote_sequence_id.id)
-                self.lote_nfse = lote
-        else:
-            raise Warning(u'Atenção!', u'Configure na empresa a sequência para\
-                                        gerar o lote da NFS-e')
+        errors = []
+        for inv_line in self.invoice_line:
+            prod = "Produto: %s - %s" % (inv_line.product_id.default_code,
+                                         inv_line.product_id.name)
+            if not inv_line.service_type_id:
+                errors.append(u'%s - Tipo de Serviço é obrigatório' % prod)
 
-        return super(AccountInvoice, self).action_invoice_send_nfse()
-
-    def fields_view_get(self, cr, uid, view_id=None, view_type='form',
-                        context=None, toolbar=False, submenu=False):
-
-        res = super(AccountInvoice, self).fields_view_get(
-            cr, uid, view_id=view_id, view_type=view_type, context=context,
-            toolbar=toolbar, submenu=submenu)
-        if view_type == 'form':
-            doc = etree.XML(res['arch'])
-            nodes = doc.xpath("//field[@name='cnae_id']")
-            if nodes:
-                user = self.pool['res.users'].browse(
-                    cr, uid, uid, context=context)
-                main_id = user.company_id.cnae_main_id.id
-                secondary_ids = user.company_id.cnae_secondary_ids.ids
-                ids = [main_id]
-                ids.extend(secondary_ids)
-                nodes[0].set("domain", "[('id', '=', %s)]" % str(ids))
-                res['arch'] = etree.tostring(doc)
-        return res
+        return res + errors
 
     def issqn_due_date(self):
         date_emition = datetime.strptime(self.date_hour_invoice,

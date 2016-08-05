@@ -28,6 +28,7 @@ import logging
 import suds
 
 from pytrustnfe.certificado import Certificado
+from pytrustnfe.nfse.paulistana import envio_lote_rps
 from pytrustnfe.nfse.paulistana import teste_envio_lote_rps
 from pytrustnfe.nfse.paulistana import cancelamento_nfe
 
@@ -35,84 +36,6 @@ from pytrustnfe.nfse.paulistana import cancelamento_nfe
 from lxml import etree
 from datetime import datetime
 from openerp import api, fields, models, tools
-from suds.client import Client
-from suds.sax.text import Raw
-from suds.transport.http import HttpTransport, Reply, TransportError
-from suds.plugin import MessagePlugin
-from openerp.addons.base_nfse.service.xml import render
-from openerp.addons.base_nfse.service.signature import Assinatura
-
-logging.getLogger('suds.client').setLevel(logging.CRITICAL)
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('suds.transport').setLevel(logging.DEBUG)
-
-class EnvelopeFixer(MessagePlugin):
-
-    def sending(self, context):
-        # removendo prefixo
-        context.envelope = re.sub( 'ns[0-9]:', '', context.envelope )
-        context.envelope = re.sub( '<SOAP-ENV:Header/>', '', str(context.envelope) )
-        context.envelope = re.sub( '</VersaoSchema>', '</MensagemXML>', str(context.envelope) )
-        context.envelope = re.sub( '<VersaoSchema>', '<VersaoSchema>1</VersaoSchema><MensagemXML>', str(context.envelope) )
-        return context.envelope
-
-    def marshalled(self, context):
-        #print context.envelope.str()
-        envelope = context.envelope
-        envelope.name = 'Envelope'
-        envelope.setPrefix('soap12')
-        envelope.nsprefixes = {
-           'xsi' : 'http://www.w3.org/2001/XMLSchema-instance',
-           'soap12': 'http://www.w3.org/2003/05/soap-envelope',
-           'xsd' : 'http://www.w3.org/2001/XMLSchema'
-
-        }
-        body_ele = envelope.getChildren()[1]
-        body_ele.setPrefix("soap12")
-        consulta = envelope.getChildren()[1][0]
-        consulta.set("xmlns", "http://www.prefeitura.sp.gov.br/nfe")
-        return Raw(context)
-
-
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-    def __init__(self, key, cert):
-        urllib2.HTTPSHandler.__init__(self)
-        self.key = key
-        self.cert = cert
-
-    def https_open(self, req):
-        #Rather than pass in a reference to a connection class, we pass in
-        # a reference to a function which, for all intents and purposes,
-        # will behave as a constructor
-        return self.do_open(self.getConnection, req)
-
-    def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host,
-                                       key_file=self.key,
-                                       cert_file=self.cert)
-
-
-class HTTPSClientCertTransport(HttpTransport):
-    def __init__(self, key, cert, *args, **kwargs):
-        HttpTransport.__init__(self, *args, **kwargs)
-        self.key = key
-        self.cert = cert
-
-    def u2open(self, u2request):
-        """
-        Open a connection.
-        @param u2request: A urllib2 request.
-        @type u2request: urllib2.Requet.
-        @return: The opened file-like urllib2 object.
-        @rtype: fp
-        """
-        tm = self.options.timeout
-        url = urllib2.build_opener(HTTPSClientAuthHandler(self.key, self.cert))
-        if self.u2ver() < 2.6:
-            socket.setdefaulttimeout(tm)
-            return url.open(u2request)
-        else:
-            return url.open(u2request, timeout=tm)
 
 
 class BaseNfse(models.TransientModel):
@@ -122,84 +45,44 @@ class BaseNfse(models.TransientModel):
     def send_rps(self):
         self.ensure_one()
         if self.city_code == '50308':  # São Paulo
+            self.date_format = '%Y-%m-%d'
             nfse = self._get_nfse_object()
 
             pfx_stream = base64.b64decode(self.certificate)
-
             certificado = Certificado(pfx_stream, self.password)
-            teste_envio_lote_rps(certificado, nfse=nfse)
 
-
-            
-            t = HTTPSClientCertTransport('/home/carlos/certificado/key2.pem',
-                                         '/home/carlos/certificado/cert.pem')
-            location = 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
-
-            envelope = EnvelopeFixer()
-            client = Client(url, location=location, transport=t, plugins=[envelope])
-
-            xml_send = render(path, 'envio_loterps.xml', nfse=nfse)
-
-            reference = ""
-            xml_signed = sign.assina_xml(xml_send, reference)
-
-            #TODO - arrumar para pasta do sistema
-            arq_temp = open('/home/carlos/tmp/pyxmlsec2.xml', 'w')
-            arq_temp.write(xml_signed)
-            arq_temp.close()
-
-            #TODO - arrumar para pasta do sistema
-            valida_schema = self._valida_schema(xml_signed, '/home/carlos/schemas/nfse/PedidoEnvioLoteRPS_v01.xsd')
-
-            if len(valida_schema):
-                erros = "Erro(s) no XML: \n"
-                for erro in valida_schema:
-                    erros += erro['type_name'] + ': ' + erro['message'] + '\n'
-                raise ValueError(erros)
-            try:
-                response = client.service.TesteEnvioLoteRPS(xml_signed)
-            except suds.WebFault, e:
-                print e.fault.faultstring
-                print e.document
-
-            x = Raw(response)
-            arq_temp = open('/home/carlos/tmp/retorno_enviolote.xml', 'w')
-            arq_temp.write(x)
-            arq_temp.close()
-
-            print response
-
-            received_xml = client.last_received()
+            if self.invoice_id.company_id.nfse_environment == '2':
+                resposta = teste_envio_lote_rps(certificado, nfse=nfse)
+            else:
+                resposta = envio_lote_rps(certificado, nfse=nfse)
 
             status = {'status': '', 'message': '', 'files': [
                 {'name': '{0}-envio-rps.xml'.format(
                     nfse['lista_rps'][0]['assinatura']),
-                 'data': base64.encodestring(sent_xml)},
+                 'data': base64.encodestring(resposta['sent_xml'])},
                 {'name': '{0}-retenvio-rps.xml'.format(
                     nfse['lista_rps'][0]['assinatura']),
-                 'data': base64.encodestring(received_xml)}
+                 'data': base64.encodestring(resposta['received_xml'])}
             ]}
-            if 'RetornoEnvioLoteRPS' in response:
-                resp = objectify.fromstring(response)
-                if resp.Cabecalho.sucesso:
-                    if resp.Cabecalho.Assincrono == 'S':
-                        return self.check_nfse_by_lote()
-                    else:
-                        status['status'] = '100'
-                        status['message'] = 'NFS-e emitida com sucesso'
-                        status['success'] = resp.Cabecalho.Sucesso
-                        status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
-                            0].NumeroNFe
-                        status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
+            resp = resposta['object']
+            if resp:
+                if resp.Cabecalho.Sucesso:
+                    status['status'] = '100'
+                    status['message'] = 'NFS-e emitida com sucesso'
+                    status['success'] = resp.Cabecalho.Sucesso
+                    status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
+                        0].NumeroNFe
+                    status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
                             0].CodigoVerificacao
                 else:
-                    status['status'] = resp.Erros.Erro[0].Codigo
-                    status['message'] = resp.Erros.Erro[0].Descricao
+                    status['status'] = resp.Erro[0].Codigo
+                    status['message'] = resp.Erro[0].Descricao
                     status['success'] = resp.Cabecalho.Sucesso
             else:
-                status['status'] = '-1'
-                status['message'] = response
+                status['status'] = -1
+                status['message'] = resposta['received_xml']
                 status['success'] = False
+            return status
 
         return super(BaseNfse, self).send_rps()
 
@@ -326,6 +209,9 @@ class BaseNfse(models.TransientModel):
         if self.invoice_id:
             inv = self.invoice_id
 
+            result['lista_rps'][0]['codigo_atividade'] = \
+                re.sub('[^0-9]', '', inv.invoice_line[0].service_type_id.code or '')
+
             cnpj_cpf = result['lista_rps'][0]['tomador']['cpf_cnpj']
             data_envio = result['lista_rps'][0]['data_emissao']
             inscr = result['lista_rps'][0]['prestador']['inscricao_municipal']
@@ -350,6 +236,7 @@ class BaseNfse(models.TransientModel):
                 str('').zfill(14)
                 )
             assinatura = hashlib.sha1(assinatura).hexdigest()
+            result['lista_rps'][0]['assinatura'] = assinatura
             if not result['lista_rps'][0]['tomador']['cidade_descricao']:
                 desc = 'Teste de Envio de Arquivo'
 
