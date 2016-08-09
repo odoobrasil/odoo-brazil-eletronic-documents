@@ -58,10 +58,10 @@ class BaseNfse(models.TransientModel):
 
             status = {'status': '', 'message': '', 'files': [
                 {'name': '{0}-envio-rps.xml'.format(
-                    nfse['lista_rps'][0]['assinatura']),
+                    nfse['lista_rps'][0]['numero']),
                  'data': base64.encodestring(resposta['sent_xml'])},
                 {'name': '{0}-retenvio-rps.xml'.format(
-                    nfse['lista_rps'][0]['assinatura']),
+                    nfse['lista_rps'][0]['numero']),
                  'data': base64.encodestring(resposta['received_xml'])}
             ]}
             resp = resposta['object']
@@ -70,9 +70,10 @@ class BaseNfse(models.TransientModel):
                     status['status'] = '100'
                     status['message'] = 'NFS-e emitida com sucesso'
                     status['success'] = resp.Cabecalho.Sucesso
-                    status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
-                        0].NumeroNFe
-                    status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
+                    if self.invoice_id.company_id.nfse_environment != '2':
+                        status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
+                            0].NumeroNFe
+                        status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
                             0].CodigoVerificacao
                 else:
                     status['status'] = resp.Erro[0].Codigo
@@ -215,37 +216,38 @@ class BaseNfse(models.TransientModel):
             cnpj_cpf = result['lista_rps'][0]['tomador']['cpf_cnpj']
             data_envio = result['lista_rps'][0]['data_emissao']
             inscr = result['lista_rps'][0]['prestador']['inscricao_municipal']
-            iss_retido = 0
-            valor_servico = 0
-            valor_deducao = 0
-            tipo_cpfcnpj = 0
-            codigo_atividade = '123'
+            iss_retido = 'N'
+            valor_servico = float(result['lista_rps'][0]['valor_servico'])
+            valor_deducao = float(result['lista_rps'][0]['valor_deducao'])
+            tipo_cpfcnpj = result['lista_rps'][0]['tomador']['tipo_cpfcnpj']
+            codigo_atividade = result['lista_rps'][0]['codigo_atividade']
             tipo_recolhimento = 'T'  # T – Tributado em São Paulo
-            assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s3%sN') % (
-                str().zfill(8),
+
+            assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s') % (
+                str(inscr).zfill(8),
                 inv.document_serie_id.code.ljust(5),
                 str(inv.internal_number).zfill(12),
-                str(data_envio[0:4] + data_envio[4:6] + data_envio[6:8]),
+                str(data_envio[0:4] + data_envio[5:7] + data_envio[8:10]),
                 str(tipo_recolhimento),
                 str(iss_retido),
                 str(int(valor_servico*100)).zfill(15),
                 str(int(valor_deducao*100)).zfill(15),
                 str(codigo_atividade).zfill(5),
                 str(tipo_cpfcnpj),
-                str(cnpj_cpf).zfill(14),
-                str('').zfill(14)
+                str(cnpj_cpf).zfill(14)
                 )
-            assinatura = hashlib.sha1(assinatura).hexdigest()
             result['lista_rps'][0]['assinatura'] = assinatura
-            if not result['lista_rps'][0]['tomador']['cidade_descricao']:
-                desc = 'Teste de Envio de Arquivo'
+            if result['lista_rps'][0]['tomador']['cidade'] != \
+               result['lista_rps'][0]['prestador']['cidade']:
+                del result['lista_rps'][0]['tomador']['inscricao_municipal']
+
 
         return result
 
     def _valida_schema(self, xml, arquivo_xsd):
         '''Função que valida um XML usando lxml do Python via arquivo XSD'''
         # Carrega o esquema XML do arquivo XSD
-        xsd = etree.XMLSchema(file = arquivo_xsd)
+        xsd = etree.XMLSchema(file=arquivo_xsd)
         # Converte o XML passado em XML do lxml
         xml = etree.fromstring(str(xml))
         # Verifica a validade do xml
