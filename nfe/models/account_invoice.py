@@ -44,17 +44,6 @@ class AccountInvoice(models.Model):
 
     @api.multi
     def attach_file_event(self, seq, att_type, ext):
-        """
-        Implemente esse metodo na sua classe de manipulação de arquivos
-        :param cr:
-        :param uid:
-        :param ids:
-        :param seq:
-        :param att_type:
-        :param ext:
-        :param context:
-        :return:
-        """
         return False
 
     def _get_nfe_factory(self, nfe_version):
@@ -144,9 +133,6 @@ class AccountInvoice(models.Model):
                         'response': '',
                         'company_id': inv.company_id.id,
                         'origin': '[NF-E]' + inv.internal_number,
-                        # TODO: Manipular os arquivos manualmente
-                        # 'file_sent': processo.arquivos[0]['arquivo'],
-                        # 'file_returned': processo.arquivos[1]['arquivo'],
                         'message': processo.resposta.xMotivo.valor,
                         'state': 'done',
                         'document_event_ids': inv.id}
@@ -166,6 +152,23 @@ class AccountInvoice(models.Model):
                                 protNFe["state"] = 'sefaz_denied'
                         self.attach_file_event(None, 'nfe', 'xml')
                         self.attach_file_event(None, None, 'pdf')
+
+                        # Nota enviada anteriormente e que está ok
+                        if processo.webservice == 4 and \
+                           processo.resposta.cStat.valor == u'100':
+                            prot = processo.resposta.protNFe
+                            protNFe["status_code"] = prot.infProt.cStat.valor
+                            protNFe["nfe_protocol_number"] = \
+                                prot.infProt.nProt.valor
+                            protNFe["message"] = prot.infProt.xMotivo.valor
+                            vals["status"] = prot.infProt.cStat.valor
+                            vals["message"] = prot.infProt.xMotivo.valor
+                            if prot.infProt.cStat.valor in ('100', '150'):
+                                protNFe["state"] = 'open'
+                            elif prot.infProt.cStat.valor in ('110', '301',
+                                                              '302'):
+                                protNFe["state"] = 'sefaz_denied'
+                            self.attach_file_event(None, 'nfe', 'xml')
             except Exception as e:
                 _logger.error(e.message, exc_info=True)
                 vals = {
