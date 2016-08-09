@@ -22,3 +22,4 @@
 
 from . import base_nfse
 from . import account_invoice
+from . import res_partner

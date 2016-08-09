@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+
+        <record model="ir.ui.view" id="view_nfse_sao_paulo_nfse_consulta_retorno_form">
+            <field name="name">view.nfse.consulta.retorno.form</field>
+            <field name="model">nfse.consulta.retorno</field>
+            <field name="arch" type="xml">
+                <form string="NFS-e" version="7.0">
+                    <group>
+                        <h2>Esta NFS-e serve apenas como consulta</h2>
+                        <field name="name" />
+                        <field name="xml_nfse" />
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_nfse_sao_paulo_nfse_de_consulta" model="ir.actions.act_window">
+            <field name="name">NFSe de consulta</field>
+            <field name="res_model">nfse.consulta.retorno</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem action="action_nfse_sao_paulo_nfse_de_consulta"
+            id="menu_nfse_sao_paulo_nfse_de_consulta"
+            name="NFSe de consulta" parent="l10n_br_account.menu_l10n_br_account_fiscal"/>
+
+
+        <record model="ir.ui.view" id="view_nfse_sao_paulo_nfse_consulta_form">
+            <field name="name">nfse.consulta.wizard</field>
+            <field name="model">nfse.consulta</field>
+            <field name="arch" type="xml">
+                <form string="Consultar NFS-e" version="7.0">
+                    <group>
+                        <field name="company_id" />
+                        <field name="tipo_consulta" />
+                        <field name="serie_rps" attrs="{ 'invisible': [('tipo_consulta', '!=', 'chave_rps')]}" />
+                        <field name="numero_rps" attrs="{ 'invisible': [('tipo_consulta', '!=', 'chave_rps')]}" />
+                        <field name="numero_nfse" attrs="{ 'invisible': [('tipo_consulta', '!=', 'chave_nfse')]}" />
+                        <field name="codigo_verificacao" attrs="{ 'invisible': [('tipo_consulta', '!=', 'chave_nfse')]}" />
+                        <field name="data_inicio" attrs="{ 'invisible': ['|', ('tipo_consulta', '=', 'chave_rps'), ('tipo_consulta', '=', 'chave_nfse')]}" />
+                        <field name="data_fim" attrs="{ 'invisible': ['|', ('tipo_consulta', '=', 'chave_rps'), ('tipo_consulta', '=', 'chave_nfse')]}" />
+                        <field name="numero_paginas" attrs="{ 'invisible': ['|', ('tipo_consulta', '=', 'chave_rps'), ('tipo_consulta', '=', 'chave_nfse')]}" />
+                        <field name="numero_lote" attrs="{ 'invisible': [('tipo_consulta', '!=', 'lote')]}" />
+                    </group>
+                    <footer>
+                        <button name="action_consultar_nfse" class="oe_highlight" string="Consultar" type="object"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_nfse_sao_paulo_consulta_nfse" model="ir.actions.act_window">
+            <field name="name">Consultar NFSe</field>
+            <field name="res_model">nfse.consulta</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem action="action_nfse_sao_paulo_consulta_nfse"
+            id="menu_nfse_sao_paulo_consulta_nfse"
+            name="Consulta NFSe" parent="l10n_br_account.menu_l10n_br_account_fiscal"/>
+
+    </data>
+</openerp>

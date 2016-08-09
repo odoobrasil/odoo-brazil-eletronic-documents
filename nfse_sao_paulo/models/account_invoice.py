@@ -1,27 +1,10 @@
 # -*- coding: utf-8 -*-
-###############################################################################
-#                                                                             #
-# Copyright (C) 2015 Trustcode - www.trustcode.com.br                         #
-#              Danimar Ribeiro <danimaribeiro@gmail.com>                      #
-#                                                                             #
-# This program is free software: you can redistribute it and/or modify        #
-# it under the terms of the GNU Affero General Public License as published by #
-# the Free Software Foundation, either version 3 of the License, or           #
-# (at your option) any later version.                                         #
-#                                                                             #
-# This program is distributed in the hope that it will be useful,             #
-# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
-# GNU General Public License for more details.                                #
-#                                                                             #
-# You should have received a copy of the GNU General Public License           #
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-#                                                                             #
-###############################################################################
+# © 2016 Danimar Ribeiro, Trustcode
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 
 from lxml import etree
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from openerp import api, fields, models
 from openerp.exceptions import Warning
@@ -45,6 +28,8 @@ class AccountInvoice(models.Model):
          ('P', u"Exportação de Serviços"),
          ('C', u"Cancelado")], u"Operação",
         default='T', readonly=True, states=FIELD_STATE)
+    verify_code = fields.Char(u'Código Verificação', size=20,
+                              readonly=True, states=FIELD_STATE)
 
     @api.multi
     def _hook_validation(self):
