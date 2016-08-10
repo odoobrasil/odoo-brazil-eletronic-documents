@@ -25,19 +25,6 @@ from pysped.nfe.danfe import DAEDE
 from .certificado import Certificado
 
 
-class DANFE(DanfePySped):
-    def __init__(self):
-        super(DANFE, self).__init__()
-
-    def gerar_danfe(self):
-        """
-        Remove a geração automática do DANFE para deixar o processo + leve
-        :return:
-        """
-        self.conteudo_pdf = ''
-        return
-
-
 class ProcessadorNFe(ProcessadorNFePySped):
     def __init__(self, company):
         super(ProcessadorNFe, self).__init__()
@@ -49,7 +36,6 @@ class ProcessadorNFe(ProcessadorNFePySped):
         self.salvar_arquivos = False
         self.contingencia_SCAN = False
         self.contingencia = False
-        self.danfe = DANFE()
         self.daede = DAEDE()
         self.caminho_temporario = ''
         self.maximo_tentativas_consulta_recibo = 5
