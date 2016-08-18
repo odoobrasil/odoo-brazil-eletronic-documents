@@ -78,7 +78,7 @@ class AccountInvoice(models.Model):
 
     @api.multi
     def action_set_to_draft(self):
-        self.button_cancel()
+        self.action_cancel()
         self.write({'state': 'draft'})
         self.delete_workflow()
         self.create_workflow()

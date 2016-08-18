@@ -10,6 +10,7 @@ import logging
 from pytrustnfe.certificado import Certificado
 from pytrustnfe.nfse.paulistana import envio_lote_rps
 from pytrustnfe.nfse.paulistana import teste_envio_lote_rps
+from pytrustnfe.nfse.paulistana import consulta_lote
 from pytrustnfe.nfse.paulistana import cancelamento_nfe
 
 
@@ -20,6 +21,30 @@ from openerp import api, fields, models, tools
 
 class BaseNfse(models.TransientModel):
     _inherit = 'base.nfse'
+
+    def _create_status(self, resposta, name):
+        status = {'status': '', 'message': '', 'files': [
+            {'name': '{0}.xml'.format(name),
+             'data': base64.encodestring(resposta['sent_xml'])},
+            {'name': '{0}-retorno.xml'.format(name),
+             'data': base64.encodestring(resposta['received_xml'])}
+        ]}
+        resp = resposta['object']
+        if resp:
+            if resp.Cabecalho.Sucesso:
+                status['status'] = '100'
+                status['message'] = 'NFS-e emitida com sucesso'
+                status['success'] = resp.Cabecalho.Sucesso
+            else:
+                status['status'] = resp.Erro[0].Codigo
+                status['message'] = resp.Erro[0].Descricao
+                status['success'] = resp.Cabecalho.Sucesso
+        else:
+            status['status'] = -1
+            status['message'] = resposta['received_xml']
+            status['success'] = False
+
+        return status
 
     @api.multi
     def send_rps(self):
@@ -36,141 +61,40 @@ class BaseNfse(models.TransientModel):
             else:
                 resposta = envio_lote_rps(certificado, nfse=nfse)
 
-            status = {'status': '', 'message': '', 'files': [
-                {'name': '{0}-envio-rps.xml'.format(
-                    nfse['lista_rps'][0]['numero']),
-                 'data': base64.encodestring(resposta['sent_xml'])},
-                {'name': '{0}-retenvio-rps.xml'.format(
-                    nfse['lista_rps'][0]['numero']),
-                 'data': base64.encodestring(resposta['received_xml'])}
-            ]}
-            resp = resposta['object']
-            if resp:
-                if resp.Cabecalho.Sucesso:
-                    status['status'] = '100'
-                    status['message'] = 'NFS-e emitida com sucesso'
-                    status['success'] = resp.Cabecalho.Sucesso
-                    if self.invoice_id.company_id.nfse_environment != '2':
-                        status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
-                            0].NumeroNFe
-                        status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
-                            0].CodigoVerificacao
-                else:
-                    status['status'] = resp.Erro[0].Codigo
-                    status['message'] = resp.Erro[0].Descricao
-                    status['success'] = resp.Cabecalho.Sucesso
-            else:
-                status['status'] = -1
-                status['message'] = resposta['received_xml']
-                status['success'] = False
+            status = self._create_status(resposta, 'envio_rps')
             return status
 
         return super(BaseNfse, self).send_rps()
 
     @api.multi
     def cancel_nfse(self):
-        if self.city_code == '1':  # São Paulo
-            url = self._url_envio_nfse()
-            client = self._get_client(url)
+        if self.city_code == '50308':  # São Paulo
+            pfx_stream = base64.b64decode(self.certificate)
+            certificado = Certificado(pfx_stream, self.password)
 
-            # TODO Preencher corretamente
-            obj_cancelamento = {
-                'cancelamento': {
-                    'nota_id': self.invoice_id.internal_number}}
+            canc = {}
+            resposta = cancelamento_nfe(certificado, cancelamento=canc)
 
-            path = os.path.dirname(os.path.dirname(__file__))
-            xml_send = render(
-                path, 'cancelamento.xml', **obj_cancelamento)
-
-            response = client.service.cancelar(xml_send)
-            sent_xml = client.last_sent()
-            received_xml = client.last_received()
-
-            status = {'status': '', 'message': '', 'files': [
-                {'name': '{0}-canc-envio.xml'.format(
-                    obj_cancelamento['cancelamento']['nota_id']),
-                 'data': base64.encodestring(sent_xml)},
-                {'name': '{0}-canc-envio.xml'.format(
-                    obj_cancelamento['cancelamento']['nota_id']),
-                 'data': base64.encodestring(received_xml)}
-            ]}
-            if 'RetornoCancelamentoNFSe' in response:
-                resp = objectify.fromstring(response)
-                status['status'] = resp.Erros.Erro[0].Codigo
-                status['message'] = resp.Erros.Erro[0].Descricao
-                status['success'] = resp.Cabecalho.Sucesso
-            else:
-                status['status'] = '-1'
-                status['message'] = response
-                status['success'] = False
-
+            status = self._create_status(resposta, 'cancelamento')
             return status
 
         return super(BaseNfse, self).cancel_nfse()
 
     @api.multi
-    def check_nfse_by_rps(self):
-        if self.city_code == '1':  # são Paulo
-
-            url = self._url_envio_nfse()
-            client = self._get_client(url)
-
-            obj_check = {}  # TODO Preencher corretamente
-
-            path = os.path.dirname(os.path.dirname(__file__))
-            xml_send = render(obj_check, path, 'consulta_nfse_por_rps.xml')
-
-            response = client.service.consultarNFSeRps(xml_send)
-            print response  # TODO Tratar resposta
-
-        return super(BaseNfse, self).check_nfse_by_rps()
-
-    @api.multi
     def check_nfse_by_lote(self):
-        if self.city_code == '1':  # São Paulo
-            url = self._url_envio_nfse()
-            client = self._get_client(url)
+        if self.city_code == '50308':  # São Paulo
+            pfx_stream = base64.b64decode(self.certificate)
+            certificado = Certificado(pfx_stream, self.password)
 
-            obj_consulta = {
-                'consulta': {
-                    'cidade': self.invoice_id.internal_number,
-                    'cpf_cnpj': re.sub('[^0-9]', '', self.invoice_id.company_id.partner_id.cnpj_cpf or ''),
-                    'lote': self.invoice_id.lote_nfse}}
+            company = self.invoice_id.company_id
+            consulta = {
+                'cnpj_remetente': re.sub('[^0-9]', '', company.cnpj_cpf),
+                'lote': self.invoice_id.lote_nfse,
+                'inscricao_municipal': re.sub('[^0-9]', '', company.inscr_mun)
+            }
+            resposta = consulta_lote(certificado, consulta=consulta)
 
-            path = os.path.dirname(os.path.dirname(__file__))
-            xml_send = render(obj_consulta, path, 'consulta_lote.xml')
-
-            response = client.service.consultarLote(xml_send)
-            sent_xml = client.last_sent()
-            received_xml = client.last_received()
-
-            status = {'status': '', 'message': '', 'files': [
-                {'name': '{0}-consulta-lote.xml'.format(
-                    obj_consulta['consulta']['lote']),
-                 'data': base64.encodestring(sent_xml)},
-                {'name': '{0}-ret-consulta-lote.xml'.format(
-                    obj_consulta['consulta']['lote']),
-                 'data': base64.encodestring(received_xml)}
-            ]}
-            if 'RetornoConsultaLote' in response:
-                resp = objectify.fromstring(response)
-                if resp.Cabecalho.sucesso:
-                    status['status'] = '100'
-                    status['message'] = 'NFS-e emitida com sucesso'
-                    status['success'] = resp.Cabecalho.Sucesso
-                    status['nfse_number'] = resp.ListaNFSe.ConsultaNFSe[
-                        0].NumeroNFe
-                    status['verify_code'] = resp.ListaNFSe.ConsultaNFSe[
-                        0].CodigoVerificacao
-                else:
-                    status['status'] = resp.Erros.Erro[0].Codigo
-                    status['message'] = resp.Erros.Erro[0].Descricao
-                    status['success'] = resp.Cabecalho.Sucesso
-            else:
-                status['status'] = '-1'
-                status['message'] = response
-                status['success'] = False
-
+            status = self._create_status(resposta, 'consulta_lote')
             return status
 
         return super(BaseNfse, self).check_nfse_by_lote()
@@ -191,7 +115,8 @@ class BaseNfse(models.TransientModel):
             inv = self.invoice_id
 
             result['lista_rps'][0]['codigo_atividade'] = \
-                re.sub('[^0-9]', '', inv.invoice_line[0].service_type_id.code or '')
+                re.sub('[^0-9]', '',
+                       inv.invoice_line[0].service_type_id.code or '')
 
             cnpj_cpf = result['lista_rps'][0]['tomador']['cpf_cnpj']
             data_envio = result['lista_rps'][0]['data_emissao']
@@ -221,32 +146,4 @@ class BaseNfse(models.TransientModel):
                result['lista_rps'][0]['prestador']['cidade']:
                 del result['lista_rps'][0]['tomador']['inscricao_municipal']
 
-
         return result
-
-    def _valida_schema(self, xml, arquivo_xsd):
-        '''Função que valida um XML usando lxml do Python via arquivo XSD'''
-        # Carrega o esquema XML do arquivo XSD
-        xsd = etree.XMLSchema(file=arquivo_xsd)
-        # Converte o XML passado em XML do lxml
-        xml = etree.fromstring(str(xml))
-        # Verifica a validade do xml
-        erros = []
-        if not xsd(xml):
-            # Caso tenha erros, cria uma lista de erros
-            for erro in xsd.error_log:
-                erros.append({
-                    'message' : erro.message,
-                    'domain' : erro.domain,
-                    'type' : erro.type,
-                    'level' : erro.level,
-                    'line' : erro.line,
-                    'column' : erro.column,
-                    'filename' : erro.filename,
-                    'domain_name': erro.domain_name,
-                    'type_name' : erro.type_name,
-                    'level_name' : erro.level_name
-                })
-                print "erro %s, linha %s" % (erro.message, erro.line)
-        # Retorna os erros, sendo uma lista vazia caso não haja erros
-        return erros

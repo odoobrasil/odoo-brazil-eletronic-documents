@@ -2,7 +2,7 @@
 # © 2016 Danimar Ribeiro, Trustcode
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-
+import re
 from lxml import etree
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -36,11 +36,20 @@ class AccountInvoice(models.Model):
         res = super(AccountInvoice, self)._hook_validation()
 
         errors = []
+        inscr_mun = re.sub('[^0-9]', '', self.company_id.inscr_mun or '')
+        if len(inscr_mun) != 8:
+            errors.append(u'Verifique a inscrição municipal da empresa')
         for inv_line in self.invoice_line:
             prod = "Produto: %s - %s" % (inv_line.product_id.default_code,
                                          inv_line.product_id.name)
             if not inv_line.service_type_id:
                 errors.append(u'%s - Tipo de Serviço é obrigatório' % prod)
+            cod_serv = re.sub('[^0-9]', '',
+                              inv_line.service_type_id.code or '')
+
+            if len(cod_serv) != 5:
+                errors.append(
+                    u'%s - Verifique o código do serviço (5 dígitos)' % prod)
 
         return res + errors
 
