@@ -2,10 +2,8 @@
 # © 2016 Danimar Ribeiro, Trustcode
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-import os
 import re
 import base64
-import logging
 
 from pytrustnfe.certificado import Certificado
 from pytrustnfe.nfse.paulistana import envio_lote_rps
@@ -13,10 +11,7 @@ from pytrustnfe.nfse.paulistana import teste_envio_lote_rps
 from pytrustnfe.nfse.paulistana import consulta_lote
 from pytrustnfe.nfse.paulistana import cancelamento_nfe
 
-
-from lxml import etree
-from datetime import datetime
-from openerp import api, fields, models, tools
+from openerp import api,  models
 
 
 class BaseNfse(models.TransientModel):
@@ -32,9 +27,19 @@ class BaseNfse(models.TransientModel):
         resp = resposta['object']
         if resp:
             if resp.Cabecalho.Sucesso:
-                status['status'] = '100'
-                status['message'] = 'NFS-e emitida com sucesso'
-                status['success'] = resp.Cabecalho.Sucesso
+                if "Alerta" in dir(resp):
+                    status['success'] = False
+                    status['status'] = resp.Alerta[0].Codigo
+                    status['message'] = resp.Alerta[0].Descricao
+                else:
+                    status['status'] = '100'
+                    if name == 'envio_rps':
+                        status['message'] = 'NFS-e emitida com sucesso'
+                    elif name == 'cancelamento':
+                        status['message'] = 'Cancelamento efetuado com sucesso'
+                    else:
+                        status['message'] = 'Consulta efetuada com sucesso'
+                    status['success'] = resp.Cabecalho.Sucesso
             else:
                 status['status'] = resp.Erro[0].Codigo
                 status['message'] = resp.Erro[0].Descricao
@@ -55,13 +60,17 @@ class BaseNfse(models.TransientModel):
 
             pfx_stream = base64.b64decode(self.certificate)
             certificado = Certificado(pfx_stream, self.password)
-
             if self.invoice_id.company_id.nfse_environment == '2':
                 resposta = teste_envio_lote_rps(certificado, nfse=nfse)
             else:
                 resposta = envio_lote_rps(certificado, nfse=nfse)
-
             status = self._create_status(resposta, 'envio_rps')
+            if status['success'] and \
+               self.invoice_id.company_id.nfse_environment == '1':
+                status['verify_code'] = \
+                    resposta['object'].ChaveNFeRPS.ChaveNFe.CodigoVerificacao
+                status['nfse_number'] = \
+                    resposta['object'].ChaveNFeRPS.ChaveNFe.NumeroNFe
             return status
 
         return super(BaseNfse, self).send_rps()
@@ -72,7 +81,17 @@ class BaseNfse(models.TransientModel):
             pfx_stream = base64.b64decode(self.certificate)
             certificado = Certificado(pfx_stream, self.password)
 
-            canc = {}
+            company = self.invoice_id.company_id
+            canc = {
+                'cnpj_remetente': re.sub('[^0-9]', '', company.cnpj_cpf),
+                'inscricao_municipal': re.sub('[^0-9]', '', company.inscr_mun),
+                'numero_nfse': self.invoice_id.internal_number,
+                'codigo_verificacao': self.invoice_id.verify_code,
+                'assinatura': '%s%s' % (
+                    re.sub('[^0-9]', '', company.inscr_mun),
+                    self.invoice_id.internal_number.zfill(12)
+                )
+            }
             resposta = cancelamento_nfe(certificado, cancelamento=canc)
 
             status = self._create_status(resposta, 'cancelamento')
@@ -126,7 +145,11 @@ class BaseNfse(models.TransientModel):
             valor_deducao = float(result['lista_rps'][0]['valor_deducao'])
             tipo_cpfcnpj = result['lista_rps'][0]['tomador']['tipo_cpfcnpj']
             codigo_atividade = result['lista_rps'][0]['codigo_atividade']
-            tipo_recolhimento = 'T'  # T – Tributado em São Paulo
+            tipo_recolhimento = inv.operation  # T – Tributado em São Paulo
+            descricao_servicos = ''
+            for line in inv.invoice_line:
+                descricao_servicos += line.name + '\n'
+            result['lista_rps'][0]['descricao'] = descricao_servicos
 
             assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s') % (
                 str(inscr).zfill(8),

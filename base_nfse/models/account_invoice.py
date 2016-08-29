@@ -253,6 +253,7 @@ class AccountInvoice(models.Model):
         else:
             self.state = 'nfse_exception'
             self.nfse_status = str(send['status']) + ' - ' + send['message']
+        return send
 
     @api.multi
     def button_cancel_nfse(self):

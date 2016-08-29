@@ -134,9 +134,6 @@ class BaseNfse(models.Model):
             aliquota_ir = inv_line.ir_percent
             aliquota_issqn = inv_line.issqn_percent
 
-        valor_servico = inv.amount_total
-        valor_deducao = 0.0
-
         data_envio = datetime.strptime(
             inv.date_in_out,
             DEFAULT_SERVER_DATETIME_FORMAT)

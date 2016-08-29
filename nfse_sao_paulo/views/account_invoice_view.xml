@@ -10,6 +10,9 @@
                     <field name="operation"
                         attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
                 </field>
+                <field name="move_id" position="after">
+                    <field name="verify_code" />
+                </field>
             </field>
         </record>
 

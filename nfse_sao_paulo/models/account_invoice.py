@@ -3,11 +3,9 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import re
-from lxml import etree
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from openerp import api, fields, models
-from openerp.exceptions import Warning
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 FIELD_STATE = {'draft': [('readonly', False)]}
@@ -30,6 +28,14 @@ class AccountInvoice(models.Model):
         default='T', readonly=True, states=FIELD_STATE)
     verify_code = fields.Char(u'Código Verificação', size=20,
                               readonly=True, states=FIELD_STATE)
+
+    @api.multi
+    def action_invoice_send_nfse(self):
+        result = super(AccountInvoice, self).action_invoice_send_nfse()
+        if result['success']:
+            if self.company_id.nfse_environment == '1':  # Produção
+                self.verify_code = result['verify_code']
+                self.internal_number = result['nfse_number']
 
     @api.multi
     def _hook_validation(self):
