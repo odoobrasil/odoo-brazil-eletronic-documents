@@ -66,13 +66,15 @@ class ResPartner(models.Model):
                         _("%s - %s") % (info.get('cStat', ''),
                                         info.get('xMotivo', '')))
 
-                city_id = state_id = None
+                city_id = None
                 if "cMun" in info:
                     city_id = self.env['l10n_br_base.city'].search(
                         [('ibge_code', '=', info['cMun'][2:])])[0]
-                    state_id = self.env['res.country.state'].search(
-                        [('ibge_code', '=', info['cMun'][:2]),
-                         ('country_id.code', '=', 'BR')])[0]
+                if "xMun" in info and not city_id:
+                    city_id = self.env['l10n_br_base.city'].search(
+                        [('name', 'ilike', info['xMun']),
+                         ('state_id', '=', partner.state_id.id)])
+
                 result = {
                     'district': info.get('xBairro', ''),
                     'street': info.get('xLgr', ''),
@@ -80,8 +82,7 @@ class ResPartner(models.Model):
                     'street2': info.get('xCpl', ''),
                     'legal_name': info.get('xNome', ''),
                     'number': info.get('nro', ''),
-                    'l10n_br_city_id': city_id.id,
-                    'state_id': state_id.id,
+                    'l10n_br_city_id': city_id and city_id.id or None,
                     'habilitado_sintegra': info['cSit'],
                     'inscr_est': info.get('IE', False) or ie,
                 }
