@@ -141,6 +141,7 @@ class NfeImportEdit(models.TransientModel):
 
                     line[2]['product_id'] = product_created.id
                     line[2]['uos_id'] = product_created.uom_id.id
+                    line[2]['account_id'] = product_created.property_account_income.id or product_created.categ_id.property_account_income_categ.id
 
                     self.env['product.supplierinfo'].create({
                         'name': self.supplier_id.id,
@@ -151,6 +152,7 @@ class NfeImportEdit(models.TransientModel):
 
             else:
                 line[2]['product_id'] = item.product_id.id
+                line[2]['account_id'] = item.product_id.property_account_income.id or item.product_id.categ_id.property_account_income_categ.id
                 line[2]['uos_id'] = item.uom_id.id
                 line[2]['cfop_id'] = item.cfop_id.id
 
@@ -212,7 +214,6 @@ class NfeImportEdit(models.TransientModel):
                 'amount_costs': inv_values['amount_costs'],
                 'fiscal_document_related_ids': inv_values['fiscal_document_related_ids']
             }
-
             self.account_invoice_id.write(vals)
 
             index = 0
