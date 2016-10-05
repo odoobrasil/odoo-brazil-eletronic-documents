@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+       <record id="view_nfe_sao_paulo_res_partner_form" model="ir.ui.view">
+            <field name="name">view.nfse.sao.paulo.res.partner.form</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//div[@name='buttons']" position="inside">
+                    <button name="consulta_cnpj_prefeitura" type="object" class="oe_inline oe_stat_button"
+                        icon="fa-search" string="Cadastro Pref." attrs="{'invisible': [('is_company', '=', False)]}">
+                    </button>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</openerp>

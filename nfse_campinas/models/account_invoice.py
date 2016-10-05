@@ -40,23 +40,6 @@ class AccountInvoice(models.Model):
     def _default_taxation(self):
         return self.env.user.company_id.default_taxation
 
-    def _default_state(self):
-        if self.env.user.company_id.state_id:
-            return self.env.user.company_id.state_id
-
-    def _default_city(self):
-        if self.env.user.company_id.l10n_br_city_id:
-            return self.env.user.company_id.l10n_br_city_id
-
-    state_id = fields.Many2one('res.country.state', string=u"Estado",
-                               default=_default_state,
-                               domain=[('country_id.code', '=', 'BR')])
-
-    provider_city_id = fields.Many2one('l10n_br_base.city',
-                                       string=u"Munícipio Prestação",
-                                       readonly=True, default=_default_city,
-                                       states=FIELD_STATE)
-
     type_retention = fields.Selection([('A', u'ISS a recolher pelo prestador'),
                                        ('R', u'Retido na Fonte')],
                                       u'Tipo Recolhimento',
@@ -85,8 +68,6 @@ class AccountInvoice(models.Model):
 
     cnae_id = fields.Many2one('l10n_br_account.cnae', string=u"CNAE",
                               readonly=True, states=FIELD_STATE)
-    lote_nfse = fields.Char(
-        u'Lote', size=20, readonly=True, states=FIELD_STATE)
     transaction = fields.Char(u'Transação', size=60,
                               readonly=True, states=FIELD_STATE)
     verify_code = fields.Char(u'Código Verificação', size=60,
@@ -96,6 +77,13 @@ class AccountInvoice(models.Model):
         [('nao_enviado', 'Não enviado'),
          ('enviado', 'Enviado porém com problemas na consulta')],
         'Status de Envio NFSe', default='nao_enviado')
+
+    @api.multi
+    def _hook_validation(self):
+        res = super(AccountInvoice, self)._hook_validation()
+        if not self.cnae_id:
+            res.append(u'Fatura / CNAE')
+        return res
 
     @api.multi
     def action_invoice_send_nfse(self):

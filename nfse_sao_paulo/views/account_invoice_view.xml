@@ -1,23 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-	<data>
-		<record id="nfse_sao_paulo_account_invoice_form" model="ir.ui.view">
-			<field name="name">nfse_sao_paulo.account.invoice.form</field>
-			<field name="model">account.invoice</field>
-			<field name="inherit_id" ref="l10n_br_account_product.l10n_br_account_product_invoice_form" />
-			<field name="arch" type="xml">
-				<field name="fiscal_position" position="after">					
-					<field name="operation"
-						attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
-                    <!-- <field name="taxation"
+    <data>
+        <record id="nfse_sao_paulo_account_invoice_form" model="ir.ui.view">
+            <field name="name">nfse_sao_paulo.account.invoice.form</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="l10n_br_account_product.l10n_br_account_product_invoice_form" />
+            <field name="arch" type="xml">
+                <field name="fiscal_position" position="after">
+                    <field name="operation"
                         attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
-                    
-					<field name="cnae_id"
-						attrs="{'invisible': [('fiscal_type', '!=', 'service')], 'required': [('fiscal_type', '==', 'service')] }" />
-					-->	
-				</field>				
-			</field>
-		</record>
+                </field>
+                <field name="move_id" position="after">
+                    <field name="verify_code" />
+                </field>
+            </field>
+        </record>
 
-	</data>
+    </data>
 </openerp>

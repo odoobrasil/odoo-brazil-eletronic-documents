@@ -44,7 +44,7 @@ class BaseNfse(models.TransientModel):
     @api.multi
     def send_rps(self):
         self.ensure_one()
-        if self.city_code == '6291':  # Campinas
+        if self.city_code == '09502':  # Campinas IBGE CODE
 
             if self.invoice_id.status_send_nfse == 'nao_enviado':
                 nfse = self._get_nfse_object()
@@ -164,7 +164,7 @@ class BaseNfse(models.TransientModel):
 
     @api.multi
     def cancel_nfse(self):
-        if self.city_code == '6291':  # Campinas
+        if self.city_code == '09502':  # Campinas IBGE Code
             url = self._url_envio_nfse()
             client = self._get_client(url)
 
@@ -237,7 +237,7 @@ class BaseNfse(models.TransientModel):
 
     @api.multi
     def check_nfse_by_lote(self):
-        if self.city_code == '6291':  # Campinas
+        if self.city_code == '09502':  # Campinas IBGE Code
             url = self._url_envio_nfse()
             client = self._get_client(url)
 
@@ -382,26 +382,26 @@ class BaseNfse(models.TransientModel):
 
     @api.multi
     def print_pdf(self, invoice):
-        if self.city_code == '6291':  # Campinas
+        if self.city_code == '09502':  # Campinas IBGE Code
             return self.env['report'].get_action(
                 invoice, 'nfse_campinas.danfse_report')
 
     def _url_envio_nfse(self):
-        if self.city_code == '6291':  # Campinas
+        if self.city_code == '09502':  # Campinas IBGE Code
             return 'http://issdigital.campinas.sp.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '5403':  # Uberlandia
+        elif self.city_code == '70206':  # Uberlandia
             return 'http://udigital.uberlandia.mg.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '0427':  # Belem-PA
+        elif self.city_code == '01402':  # Belem-PA
             return 'http://www.issdigitalbel.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '9051':  # Campo Grande
+        elif self.city_code == '02704':  # Campo Grande
             return 'http://issdigital.pmcg.ms.gov.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '5869':  # Nova Iguaçu
+        elif self.city_code == '03500':  # Nova Iguaçu
             return 'http://www.issmaisfacil.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '1219':  # Teresina
+        elif self.city_code == '11001':  # Teresina
             return 'http://www.issdigitalthe.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '0921':  # São Luis
+        elif self.city_code == '11300':  # São Luis - MA
             return 'http://www.issdigitalslz.com.br/WsNFe2/LoteRps.jws?wsdl'
-        elif self.city_code == '7145':  # Sorocaba
+        elif self.city_code == '52205':  # Sorocaba
             return 'http://www.issdigitalsod.com.br/WsNFe2/LoteRps.jws?wsdl'
 
     def _get_nfse_object(self):

@@ -24,21 +24,22 @@ from openerp import api, fields, models
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
-    
-    
-    default_operation = fields.Selection([('A', u"Sem Dedução"),
-                                  ('B', u"Com dedução/Materiais"),
-                                  ('C', u"Imune/Isenta de ISSQN"),
-                                  ('D', u"Devolução/Simples Remessa"),
-                                  ('J', u"Intermediação")], u"Operação")
 
-    default_taxation = fields.Selection([('C', u"Isenta de ISS"),
-                                 ('E', u"Não incidência no município"),
-                                 ('F', u"Imune"),
-                                 ('K', u"Exigibilidade Susp.Dec.J/Proc.A"),
-                                 ('N', u"Não Tributável"),
-                                 ('T', u"Tributável"),
-                                 ('G', u"Tributável Fixo"),
-                                 ('H', u"Tributável S.N."),
-                                 ('M', u"Micro Empreendedor Individual(MEI)")],
-                                u"Tributação")
+    default_operation = fields.Selection(
+        [('A', u"Sem Dedução"),
+         ('B', u"Com dedução/Materiais"),
+         ('C', u"Imune/Isenta de ISSQN"),
+         ('D', u"Devolução/Simples Remessa"),
+         ('J', u"Intermediação")], u"Operação")
+
+    default_taxation = fields.Selection(
+        [('C', u"Isenta de ISS"),
+         ('E', u"Não incidência no município"),
+         ('F', u"Imune"),
+         ('K', u"Exigibilidade Susp.Dec.J/Proc.A"),
+         ('N', u"Não Tributável"),
+         ('T', u"Tributável"),
+         ('G', u"Tributável Fixo"),
+         ('H', u"Tributável S.N."),
+         ('M', u"Micro Empreendedor Individual(MEI)")],
+        u"Tributação")

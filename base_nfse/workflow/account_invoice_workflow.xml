@@ -58,7 +58,7 @@
 			<field name="act_from" ref="act_nfse_transmit" />
 			<field name="act_to" ref="account.act_open" />
 			<field name="condition">(state=='open')</field>
-			<field name="signal">invoice_open</field>
+			<field name="signal" eval="False" />
 		</record>
 
 		<record id="tras_nfse_transmit_exception" model="workflow.transition">

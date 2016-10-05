@@ -19,17 +19,23 @@
 #                                                                             #
 ###############################################################################
 
+import re
 import base64
 import requests
 import suds.client
 import suds_requests
 from uuid import uuid4
+from datetime import datetime
 from ..service.certificate import converte_pfx_pem
 from openerp import api, fields, models
+from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 
 
 class BaseNfse(models.Model):
     _name = 'base.nfse'
+
+    date_format = '%Y%m%d'
+    date_hour_format = '%Y%m%d%H%M%S'
 
     def _company_certificate(self):
         for item in self:
@@ -57,13 +63,122 @@ class BaseNfse(models.Model):
     def _url_consulta_nfse_por_rps(self):
         return ''
 
+    def _nfse_invoice_line_data(self, inv_line):
+        item = {
+            'descricao': inv_line.product_id.name_template or '',
+            'quantidade': str("%.0f" % inv_line.quantity),
+            'valor_unitario': str("%.2f" % (inv_line.price_unit)),
+            'valor_total': str("%.2f" %
+                               (inv_line.quantity * inv_line.price_unit)),
+        }
+        return item
+
     def _get_nfse_object(self):
         """
         Sobrescrever este método para adicionar novos itens ao gerar o xml.
         Returns:
             dict: retorna um dicionário com os dados da nfse
          """
-        return None
+        if not self.invoice_id:
+            return {}
+
+        inv = self.invoice_id
+        city_tomador = inv.partner_id.l10n_br_city_id
+        tomador = {
+            'tipo_cpfcnpj': 2 if inv.partner_id.is_company else 1,
+            'cpf_cnpj': re.sub('[^0-9]', '', inv.partner_id.cnpj_cpf or ''),
+            'razao_social': inv.partner_id.legal_name or '',
+            'logradouro': inv.partner_id.street or '',
+            'numero': inv.partner_id.number or '',
+            'complemento': inv.partner_id.street2 or '',
+            'bairro': inv.partner_id.district or 'Sem Bairro',
+            'cidade': '%s%s' % (city_tomador.state_id.ibge_code,
+                                city_tomador.ibge_code),
+            'cidade_descricao': inv.partner_id.l10n_br_city_id.name or '',
+            'uf': inv.partner_id.state_id.code,
+            'cep': re.sub('[^0-9]', '', inv.partner_id.zip),
+            'telefone': re.sub('[^0-9]', '', inv.partner_id.phone or ''),
+            'inscricao_municipal': re.sub(
+                '[^0-9]', '', inv.partner_id.inscr_mun or ''),
+            'email': inv.partner_id.email or '',
+        }
+        city_prestador = inv.company_id.partner_id.l10n_br_city_id
+        prestador = {
+            'cnpj': re.sub(
+                '[^0-9]', '', inv.company_id.partner_id.cnpj_cpf or ''),
+            'razao_social': inv.company_id.partner_id.legal_name or '',
+            'inscricao_municipal': re.sub(
+                '[^0-9]', '', inv.company_id.partner_id.inscr_mun or ''),
+            'cidade': '%s%s' % (city_prestador.state_id.ibge_code,
+                                city_prestador.ibge_code),
+            'telefone': re.sub('[^0-9]', '', inv.company_id.phone or ''),
+            'email': inv.company_id.partner_id.email or '',
+        }
+
+        aliquota_pis = 0.0
+        aliquota_cofins = 0.0
+        aliquota_csll = 0.0
+        aliquota_inss = 0.0
+        aliquota_ir = 0.0
+        aliquota_issqn = 0.0
+        deducoes = []
+        itens = []
+        for inv_line in inv.invoice_line:
+            item = self._nfse_invoice_line_data(inv_line)
+            itens.append(item)
+
+            aliquota_pis = inv_line.pis_percent
+            aliquota_cofins = inv_line.cofins_percent
+            aliquota_csll = inv_line.csll_percent
+            aliquota_inss = inv_line.inss_percent
+            aliquota_ir = inv_line.ir_percent
+            aliquota_issqn = inv_line.issqn_percent
+
+        data_envio = datetime.strptime(
+            inv.date_in_out,
+            DEFAULT_SERVER_DATETIME_FORMAT)
+        data_envio = data_envio.strftime(self.date_format)
+
+        rps = [{
+            'tomador': tomador,
+            'prestador': prestador,
+            'numero': inv.number or '',
+            'data_emissao': data_envio,
+            'serie': inv.document_serie_id.code or '',
+            'aliquota_atividade': str("%.4f" % aliquota_issqn),
+            'municipio_prestacao': inv.provider_city_id.ibge_code,
+            'municipio_descricao_prestacao': inv.provider_city_id.name or '',
+            'valor_pis': str("%.2f" % inv.pis_value),
+            'valor_cofins': str("%.2f" % inv.cofins_value),
+            'valor_csll': str("%.2f" % inv.csll_value),
+            'valor_inss': str("%.2f" % inv.inss_value),
+            'valor_ir': str("%.2f" % inv.ir_value),
+            'aliquota_pis': str("%.2f" % aliquota_pis),
+            'aliquota_cofins': str("%.2f" % aliquota_cofins),
+            'aliquota_csll': str("%.2f" % aliquota_csll),
+            'aliquota_inss': str("%.2f" % aliquota_inss),
+            'aliquota_ir': str("%.2f" % aliquota_ir),
+            'valor_servico': str("%.2f" % inv.amount_total),
+            'valor_deducao': '0',
+            'descricao': "%s\n%s" % (inv.comment, inv.fiscal_comment),
+            'deducoes': deducoes,
+            'itens': itens,
+        }]
+
+        nfse_object = {
+            'cidade': prestador['cidade'],
+            'cpf_cnpj': prestador['cnpj'],
+            'remetente': prestador['razao_social'],
+            'transacao': '',
+            'data_inicio': data_envio,
+            'data_fim': data_envio,
+            'total_rps': '1',
+            'total_servicos': str("%.2f" % inv.amount_total),
+            'total_deducoes': '0',
+            'lote_id': '%s' % inv.lote_nfse,
+            'lista_rps': rps
+        }
+        return nfse_object
 
     def _validate_result(self, result):
         pass

@@ -21,5 +21,5 @@
 
 
 from . import base_nfse
-from . import l10n_br_city
 from . import account_invoice
+from . import res_partner

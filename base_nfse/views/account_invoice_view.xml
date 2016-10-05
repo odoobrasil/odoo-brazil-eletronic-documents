@@ -8,6 +8,11 @@
 			<field name="priority">32</field>
 			<field name="inherit_id" ref="l10n_br_account_product.l10n_br_account_product_invoice_form" />
 			<field name="arch" type="xml">
+                <button name="invoice_cancel" position='replace'>
+                    <button name="invoice_cancel" states="draft,proforma2,open,nfse_ready" string="Cancel Invoice" groups="base.group_no_one"
+                        attrs="{'invisible': [('fiscal_type', '==', 'service')]}">
+                    </button>
+                </button>
 				<button name="invoice_open" position="after">
 					<button name="nfse_trysend" states="nfse_ready"
 						confirm="Confirma emissão da NFS-e ?" string="Transmitir" class="oe_highlight"
@@ -18,8 +23,8 @@
 						groups="base.group_user" type="object" />
 					<button name="invoice_print_nfse" states="nfse_ready" string="Pré-visualizar RPS"
 						type="object" groups="base.group_user" />
-					<button name="invoice_cancel" string="Cancelar" states="nfse_ready"
-							groups="base.group_user"  />
+                    <button name="button_cancel_nfse" type="object" string="Cancelar NFS-e" states="open,paid"
+                        groups="base.group_user"  />
 				</button>
 				<field name="ind_final" position="attributes">
 					<attribute name="attrs">{'invisible': [('fiscal_type', '==', 'service')], 'readonly': [('state', 'not in', 'draft')]}</attribute>
@@ -36,6 +41,10 @@
 				<field name="move_id" position="after">
 					<field name="nfse_status" string="Status NFS-e" attrs="{'invisible': [('fiscal_type', '!=', 'service')]}"></field>
 				</field>
+                <field name="internal_number" position="after">
+                    <field name="number" string="Número RPS"
+                        attrs="{'invisible': [('fiscal_type', '!=', 'service')] }" />
+                </field>
 			</field>
 		</record>
 	</data>
