@@ -28,9 +28,20 @@ class BaseNfse(models.TransientModel):
         if resp:
             if resp.Cabecalho.Sucesso:
                 if "Alerta" in dir(resp):
-                    status['success'] = False
+                    status['success'] = True
+
+                    mensagens = ['NFS-e emitida com sucesso.']
+                    for alerta in resp.Alerta:
+                        if alerta.Codigo == 224:
+                            status['success'] = False
+                        mensagens.append("%s - %s" % (alerta.Codigo,
+                                                      alerta.Descricao))
+
+                    if status['success']:
+                        mensagens = ['NFS-e emitida com sucesso\n \
+                                     Alertas:\n'] + mensagens
                     status['status'] = resp.Alerta[0].Codigo
-                    status['message'] = resp.Alerta[0].Descricao
+                    status['message'] = u"\n".join(mensagens)
                 else:
                     status['status'] = '100'
                     if name == 'envio_rps':
