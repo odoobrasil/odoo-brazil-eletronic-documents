@@ -30,6 +30,16 @@ class AccountInvoice(models.Model):
                               readonly=True, states=FIELD_STATE)
 
     @api.multi
+    def invoice_print(self):
+        if self.fiscal_type == 'service' and \
+           self.company_id.l10n_br_city_id.ibge_code == '50308':
+
+            return self.env['report'].get_action(
+                self, 'nfse_sao_paulo.danfse_report')
+
+        return super(AccountInvoice, self).invoice_print()
+
+    @api.multi
     def action_invoice_send_nfse(self):
         result = super(AccountInvoice, self).action_invoice_send_nfse()
         if result['success']:
