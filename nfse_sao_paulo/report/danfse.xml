@@ -56,8 +56,7 @@
                                     </strong>
                                 </t>
                                 <t t-if="(inv.state == 'open' or inv.state == 'paid')">
-                                    <strong style="font-size:20px;">NOTA FISCAL ELETRÔNICA DE SERVIÇOS - NFSe
-                                    </strong>
+                                    <strong style="font-size:20px;">NOTA FISCAL ELETRÔNICA DE SERVIÇOS - NFSe</strong><br />
                                     RPS Nº <span t-field="inv.number" /> Série API, emitido em <span t-field="inv.date_hour_invoice" />
                                 </t>
                             </div>
@@ -89,37 +88,42 @@
                             </div>
                         </div>
                         <div class="row" style="border: 1px solid black; padding: 0 0 5px 5px;">
-                            <div class="col-xs-12" style="text-align:center;">
-                                <strong>PRESTADOR DE SERVIÇOS</strong>
+                            <div class="col-xs-1">
+                                <img style="height:65px;margin-top:15px;" t-att-src="'data:image/png;base64,%s' % inv.company_id.logo" /><br />
                             </div>
-                            <div class="col-xs-12">
-                                Nome/Razão Social:
-                                <strong t-field="inv.company_id.partner_id.legal_name"></strong>
-                            </div>
-                            <div class="col-xs-8">
-                                CNPJ:
-                                <strong t-field="inv.company_id.partner_id.cnpj_cpf"></strong>
-                            </div>
-                            <div class="col-xs-4">
-                                Inscrição Municipal:
-                                <strong t-field="inv.company_id.partner_id.inscr_mun"></strong>
-                            </div>
-                            <div class="col-xs-12">
-                                Endereço:
-                                <strong t-field="inv.company_id.partner_id.street">
-                                </strong>
-                                <strong t-field="inv.company_id.partner_id.number">
-                                </strong>
-                                <strong t-field="inv.company_id.partner_id.district">
-                                </strong>
-                            </div>
-                            <div class="col-xs-6">
-                                Município:
-                                <strong t-field="inv.company_id.partner_id.l10n_br_city_id.name"></strong>
-                            </div>
-                            <div class="col-xs-6">
-                                UF:
-                                <strong t-field="inv.company_id.partner_id.state_id.name"></strong>
+                            <div class="col-xs-11">
+                                <div class="col-xs-12" style="text-align:center;">
+                                    <strong>PRESTADOR DE SERVIÇOS</strong>
+                                </div>
+                                <div class="col-xs-12">
+                                    Nome/Razão Social:
+                                    <strong t-field="inv.company_id.partner_id.legal_name"></strong>
+                                </div>
+                                <div class="col-xs-8">
+                                    CNPJ:
+                                    <strong t-field="inv.company_id.partner_id.cnpj_cpf"></strong>
+                                </div>
+                                <div class="col-xs-4">
+                                    Inscrição Municipal:
+                                    <strong t-field="inv.company_id.partner_id.inscr_mun"></strong>
+                                </div>
+                                <div class="col-xs-12">
+                                    Endereço:
+                                    <strong t-field="inv.company_id.partner_id.street">
+                                    </strong>
+                                    <strong t-field="inv.company_id.partner_id.number">
+                                    </strong>
+                                    <strong t-field="inv.company_id.partner_id.district">
+                                    </strong>
+                                </div>
+                                <div class="col-xs-6">
+                                    Município:
+                                    <strong t-field="inv.company_id.partner_id.l10n_br_city_id.name"></strong>
+                                </div>
+                                <div class="col-xs-6">
+                                    UF:
+                                    <strong t-field="inv.company_id.partner_id.state_id.name"></strong>
+                                </div>
                             </div>
                         </div>
                         <div class="row" style="border: 1px solid black;padding: 0 0 5px 5px;">
@@ -198,32 +202,57 @@
                             <div class="col-xs-2" style="width:20%;text-align:center;">
                                 INSS(<span t-field="inv.invoice_line[0].inss_percent" />%):
                                 <br />
-                                <strong t-field="inv.inss_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.inss_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>-</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="width:20%;text-align:center;">
                                 IR(<span t-field="inv.invoice_line[0].ir_percent" />%):
                                 <br />
-                                <strong t-field="inv.ir_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.ir_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>-</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="width:20%;text-align:center;">
                                 CSLL(<span t-field="inv.invoice_line[0].csll_percent" />%):
                                 <br />
-                                <strong t-field="inv.csll_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.csll_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>-</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="width:20%;text-align:center;">
                                 COFINS(<span t-field="inv.invoice_line[0].cofins_percent" />%):
                                 <br />
-                                <strong t-field="inv.cofins_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.cofins_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>-</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="width:20%;text-align:center;border">
                                 PIS(<span t-field="inv.invoice_line[0].pis_percent" />%):
                                 <br />
-                                <strong t-field="inv.pis_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.pis_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>-</strong>
+                                </t>
                             </div>
                         </div>
                         <div class="row" style="border: 1px solid black; padding:0 0 5px 5px;">
@@ -236,48 +265,63 @@
                         </div>
                         <div class="row" style="border: 1px solid black;">
                             <div class="col-xs-3" style="text-align:center;">
-                                VL. Total Deduções:
+                                VL. Total Deduções (R$):
                                 <br />
                                 <strong>R$0,00</strong>
                             </div>
                             <div class="col-xs-3" style="text-align:center;">
-                                Base de Cálculo:
+                                Base de Cálculo (R$):
                                 <br />
-                                <strong t-field="inv.amount_services"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.amount_services"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>*</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="text-align:center;">
-                                Alíquota:
+                                Alíquota (%):
                                 <br />
-                                <strong><span t-field="inv.invoice_line[0].issqn_percent" />%</strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong><span t-field="inv.invoice_line[0].issqn_percent" />%</strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>*</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="text-align:center;">
-                                Valor do ISS:
+                                Valor do ISS (R$):
                                 <br />
-                                <strong t-field="inv.issqn_value"
-                                    t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                <t t-if="inv.company_id.fiscal_type == '3'">
+                                    <strong t-field="inv.issqn_value"
+                                        t-field-options='{"widget": "monetary",  "display_currency": "inv.currency_id" }'></strong>
+                                </t>
+                                <t t-if="inv.company_id.fiscal_type != '3'">
+                                    <strong>*</strong>
+                                </t>
                             </div>
                             <div class="col-xs-2" style="text-align:center;">
-                                Crédito:
+                                Crédito (R$):
                                 <br />
-                                <strong>A fazer</strong>
+                                <strong>0,00</strong>
                             </div>
                         </div>
                         <div class="row" style="border: 1px solid black;padding:0 0 5px 5px;">
                             <div class="col-xs-4" style="text-align:center;">
                                 Município de Prestação do Serviço:
                                 <br />
-                                <strong>A fazer</strong>
+                                <strong>-</strong>
                             </div>
                             <div class="col-xs-4" style="text-align:center;">
                                 Número Inscrição da Obra:
                                 <br />
-                                <strong>A fazer</strong>
+                                <strong>-</strong>
                             </div>
                             <div class="col-xs-4" style="text-align:center;">
                                 Valor Aproximado dos Tributos / Fonte
                                 <br />
-                                <strong>A fazer</strong>
+                                <strong>-</strong>
                             </div>
                         </div>
                         <div class="row"
