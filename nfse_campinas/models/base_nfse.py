@@ -478,13 +478,12 @@ class BaseNfse(models.TransientModel):
                 inv.date_in_out,
                 tools.DEFAULT_SERVER_DATETIME_FORMAT)
             data_envio = data_envio.strftime('%Y%m%d')
-
             assinatura = '%011dNF   %012d%s%s %s%s%015d%015d%010d%014d' % \
                 (int(prestador['inscricao_municipal']),
                  int(inv.number),
                  data_envio, inv.taxation, 'N', 'N' if tipo_recolhimento == 'A' else 'S',
-                 valor_servico * 100,
-                 valor_deducao * 100,
+                 round(valor_servico * 100),
+                 round(valor_deducao * 100),
                  int(codigo_atividade),
                  int(tomador['cpf_cnpj']))
 
