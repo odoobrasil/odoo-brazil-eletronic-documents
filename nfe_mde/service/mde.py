@@ -39,7 +39,6 @@ def __processo(company):
     p.certificado.senha = company.nfe_a1_password
     p.salvar_arquivos = False
     p.contingencia_SCAN = False
-    p.caminho = company.nfe_export_folder
     return p
 
 
