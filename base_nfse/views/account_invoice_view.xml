@@ -23,8 +23,8 @@
 						groups="base.group_user" type="object" />
 					<button name="invoice_print_nfse" states="nfse_ready" string="Pré-visualizar RPS"
 						type="object" groups="base.group_user" />
-                    <button name="button_cancel_nfse" type="object" string="Cancelar NFS-e" states="open,paid"
-                        groups="base.group_user"  />
+                    <button name="button_cancel_nfse" type="object" string="Cancelar NFS-e"
+                        groups="base.group_user" attrs="{'invisible': [('fiscal_type', '!=', 'service')] }"  />
 				</button>
 				<field name="ind_final" position="attributes">
 					<attribute name="attrs">{'invisible': [('fiscal_type', '==', 'service')], 'readonly': [('state', 'not in', 'draft')]}</attribute>

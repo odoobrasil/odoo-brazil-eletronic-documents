@@ -6,10 +6,6 @@
 			<field name="model">account.invoice</field>
 			<field name="inherit_id" ref="l10n_br_account.view_l10n_br_account_invoice_form" />
 			<field name="arch" type="xml">
-				<button name="invoice_open" position="after">
-					<button name="button_cancel_nfse" string="Cancelar NFS-e"
-						states="open" groups="base.group_user" type="object" />
-				</button>
 				<field name="fiscal_position" position="after">
 					<field name="state_id"
 						attrs="{'invisible': ['|', ('fiscal_type', '!=', 'service'), ('state', '!=', 'draft')] }" />

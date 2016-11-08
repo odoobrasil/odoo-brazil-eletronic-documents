@@ -78,7 +78,7 @@ class BaseNfse(models.TransientModel):
                         response = client.service.testeEnviar(xml_signed)
                     else:
                         response = client.service.enviar(xml_signed)
-                except Exception as e:
+                except:
                     _logger.warning('Erro ao enviar lote', exc_info=True)
                     status[
                         'message'] = 'Falha de conexão - Verifique a internet'
@@ -102,8 +102,8 @@ class BaseNfse(models.TransientModel):
                         if self.invoice_id.company_id.nfse_environment == '2':
                             status['status'] = '100'
                             status['success'] = True
-                            status[
-                                'message'] = 'NFSe emitida em homologação com sucesso!'
+                            status['message'] = \
+                                'NFSe emitida em homologação com sucesso!'
                             return status
 
                         self.invoice_id.status_send_nfse = 'enviado'
@@ -257,7 +257,7 @@ class BaseNfse(models.TransientModel):
                       ]}
             try:
                 response = client.service.consultarLote(xml_send)
-            except Exception as e:
+            except:
                 _logger.warning('Erro ao consultar lote', exc_info=True)
                 status['message'] = 'Falha de conexão - Verifique a internet'
                 return status
@@ -296,8 +296,8 @@ class BaseNfse(models.TransientModel):
                         status['success'] = False
                 except:
                     status['status'] = '-100'
-                    status[
-                        'message'] = 'Erro ao tentar carregar a resposta da prefeitura'
+                    status['message'] = \
+                        'Erro ao tentar carregar a resposta da prefeitura'
                     status['success'] = False
             else:
                 status['status'] = '-1'
