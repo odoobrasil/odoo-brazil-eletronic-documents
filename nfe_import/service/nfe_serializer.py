@@ -117,6 +117,11 @@ class NFeSerializer(object):
 
         res['vendor_serie'] = str(self.nfe.infNFe.ide.serie.valor)
         res['supplier_invoice_number'] = self.nfe.infNFe.ide.nNF.valor
+        res['internal_number'] = (
+            "{cnpj}:{vendor_serie}:{supplier_invoice_number}".format(
+                cnpj=self.nfe.infNFe.emit.CNPJ.valor, **res
+            )
+        )
         res['date_in_out'] = datetime.now()
         res['nfe_purpose'] = str(self.nfe.infNFe.ide.finNFe.valor)
         res['nfe_access_key'] = self.nfe.infNFe.Id.valor[3:]
