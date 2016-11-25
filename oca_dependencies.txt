@@ -1,3 +1,4 @@
 server-tools https://github.com/OCA/server-tools.git
 account-fiscal-rule https://github.com/OCA/account-fiscal-rule.git
 l10n-brazil https://github.com/OCA/l10n-brazil.git
+reporting-engine https://github.com/OCA/reporting-engine.git
