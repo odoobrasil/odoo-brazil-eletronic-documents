@@ -58,8 +58,8 @@ INVOICE_STATE_SRING = {
     'sefaz_denied': u'Denegada no Sefaz',
 }
 
-class NfeInvoiceReportWizard(models.TransientModel):
 
+class NfeInvoiceReportWizard(models.TransientModel):
     _name = 'nfe.invoice.report'
     _description = u'Assistente de relatório de faturamento'
 
@@ -143,9 +143,11 @@ class NfeInvoiceReportWizard(models.TransientModel):
             fiscal_category_ids = fiscal_category_ids.filtered(
                 lambda record: record.id in self.fiscal_category_ids.ids)
         if self.start_date:
-            domain.append(('date_hour_invoice', '>=', self.start_date + ' 00:00:01'))
+            domain.append(
+                ('date_hour_invoice', '>=', self.start_date + ' 00:00:01'))
         if self.stop_date:
-            domain.append(('date_hour_invoice', '<=', self.stop_date + ' 23:59:59'))
+            domain.append(
+                ('date_hour_invoice', '<=', self.stop_date + ' 23:59:59'))
         if fiscal_category_ids:
             domain.append(
                 ('fiscal_category_id', 'in', fiscal_category_ids.ids))
@@ -187,7 +189,8 @@ class NfeInvoiceReportWizard(models.TransientModel):
                 {
                     'internal_number': invoice.internal_number or '-',
                     # 'serie': invoice.internal_number or '',
-                    'date': parser.parse(invoice.date_hour_invoice).strftime('%d-%m-%Y') or '-',
+                    'date': parser.parse(
+                        invoice.date_hour_invoice).strftime('%d-%m-%Y') or '-',
                     'type': OPERATION_TYPE[invoice.type] or '-',
                     'partner': invoice.partner_id.legal_name or '-',
                     'cnpj_cpf': invoice.partner_id.cnpj_cpf or '-',
@@ -220,26 +223,24 @@ class NfeInvoiceReportWizard(models.TransientModel):
                 'content': content}
 
 
-class StockHistoryXlsParser(report_sxw.rml_parse):
-
+class NFeXlsParser(report_sxw.rml_parse):
     def __init__(self, cr, uid, name, context):
-        super(StockHistoryXlsParser, self).__init__(
+        super(NFeXlsParser, self).__init__(
             cr, uid, name, context=context)
         self.context = context
 
 
-class StockHistoryXls(report_xls):
-
+class NFeXls(report_xls):
     def __init__(self, name, table, rml=False, parser=False, header=True,
                  store=False):
-        super(StockHistoryXls, self).__init__(
+        super(NFeXls, self).__init__(
             name, table, rml, parser, header, store)
 
         # Cell Styles
         _xs = self.xls_styles
         # header
-        rh_cell_format = _xs['bold'] + _xs['fill'] + \
-            _xs['borders_all'] + _xs['right']
+        rh_cell_format = \
+            _xs['bold'] + _xs['fill'] + _xs['borders_all'] + _xs['right']
         self.rh_cell_style = xlwt.easyxf(rh_cell_format)
         self.rh_cell_style_center = xlwt.easyxf(rh_cell_format + _xs['center'])
         self.rh_cell_style_right = xlwt.easyxf(rh_cell_format + _xs['right'])
@@ -269,11 +270,13 @@ class StockHistoryXls(report_xls):
                 'totals': [1, 0, 'text', None]},
             'internal_number': {
                 'header': [1, 15, 'text', _render("('Numero Interno')")],
-                'lines': [1, 0, 'text', _render("line.get('internal_number')")],
+                'lines': [1, 0, 'text', _render(
+                    "line.get('internal_number')")],
                 'totals': [1, 0, 'text', None]},
             'revenue_expense': {
                 'header': [1, 15, 'text', _render("('Revenue Expense')")],
-                'lines': [1, 0, 'text', _render("line.get('revenue_expense')")],
+                'lines': [1, 0, 'text', _render(
+                    "line.get('revenue_expense')")],
                 'totals': [1, 0, 'text', None]},
             'type': {
                 'header': [1, 15, 'text', _render("('Tipo')")],
@@ -309,24 +312,33 @@ class StockHistoryXls(report_xls):
         journal_domain += invoices_report._revenue_expense()
         fiscal_category_ids = False
         if len(journal_domain) > 0:
-            journal_ids = self.pool.get('account.journal').\
-                search(self.cr, self.uid, [journal_domain], context=self.context)
-            fiscal_category_ids = self.pool.get('l10n_br_account.fiscal.category').\
-                search(
-                    self.cr, self.uid,
-                    [('property_journal', 'in', journal_ids.ids)],
-                    context=self.context
-                )
+            journal_ids = self.pool.get('account.journal').search(
+                self.cr, self.uid, [journal_domain], context=self.context)
+            fiscal_category_ids = self.pool.get(
+                'l10n_br_account.fiscal.category').search(
+                self.cr, self.uid,
+                [('property_journal', 'in', journal_ids.ids)],
+                context=self.context
+            )
         if invoices_report.fiscal_category_ids:
             fiscal_category_ids = fiscal_category_ids.filtered(
-                lambda record: record.id in invoices_report.fiscal_category_ids.ids)
+                lambda record:
+                record.id in invoices_report.fiscal_category_ids.ids)
         if invoices_report.start_date:
-            domain.append(('date_hour_invoice', '>=', invoices_report.start_date + ' 00:00:01'))
+            domain.append(
+                ('date_hour_invoice',
+                 '>=',
+                 invoices_report.start_date + ' 00:00:01'))
         if invoices_report.stop_date:
-            domain.append(('date_hour_invoice', '<=', invoices_report.stop_date + ' 23:59:59'))
+            domain.append(
+                ('date_hour_invoice',
+                 '<=',
+                 invoices_report.stop_date + ' 23:59:59'))
         if fiscal_category_ids:
             domain.append(
-                ('fiscal_category_id', 'in', fiscal_category_ids.ids))
+                ('fiscal_category_id',
+                 'in',
+                 fiscal_category_ids.ids))
         if invoices_report.state:
             if invoices_report.state == "open_and_paid":
                 domain.append('|')
@@ -344,17 +356,19 @@ class StockHistoryXls(report_xls):
         return domain
 
     def _get_invoices(self, invoices_report):
-        return self.pool.get('account.invoice').search(self.cr, self.uid,
+        return self.pool.get('account.invoice').search(
+            self.cr,
+            self.uid,
             self._get_invoices_search_domain(invoices_report),
             # order=invoices_report.search_order,
-        )
+            )
 
     def compute(self, invoices_report):
         assert len(invoices_report) == 1
 
         invoices = self.pool.get('account.invoice').browse(
-                self.cr, self.uid, self._get_invoices(invoices_report)
-            )
+            self.cr, self.uid, self._get_invoices(invoices_report)
+        )
 
         content = []
         amount_total = amount_gross = 0.00
@@ -364,7 +378,8 @@ class StockHistoryXls(report_xls):
                 {
                     'internal_number': invoice.internal_number or '-',
                     # 'serie': invoice.internal_number or '',
-                    'date': parser.parse(invoice.date_hour_invoice).strftime('%d-%m-%Y') or '-',
+                    'date': parser.parse(
+                        invoice.date_hour_invoice).strftime('%d-%m-%Y') or '-',
                     'type': OPERATION_TYPE[invoice.type] or '-',
                     'partner': invoice.partner_id.legal_name or '-',
                     'cnpj_cpf': invoice.partner_id.cnpj_cpf or '-',
@@ -409,27 +424,27 @@ class StockHistoryXls(report_xls):
         row_pos += 1
 
         # Column headers
-        c_specs = map(lambda x: self.render(
-            x, self.col_specs_template, 'header'),
-            [
-                'date',
-                'cnpj_cpf',
-                'partner',
-                'internal_number',
-                'revenue_expense',
-                'type',
-                'amount_gross',
-                'amount_untaxed',
-                'amount_total',
-                'state'
-            ])
+        c_specs = map(lambda x:
+                      self.render(x, self.col_specs_template, 'header'),
+                      [
+                          'date',
+                          'cnpj_cpf',
+                          'partner',
+                          'internal_number',
+                          'revenue_expense',
+                          'type',
+                          'amount_gross',
+                          'amount_untaxed',
+                          'amount_total',
+                          'state'
+                      ])
         row_data = self.xls_row_template(c_specs, [x[0] for x in c_specs])
         row_pos = self.xls_write_row(
             ws, row_pos, row_data, row_style=self.rh_cell_style_center,
             set_column_size=True)
         ws.set_horz_split_pos(row_pos)
 
-        #lines
+        # lines
         active_ids = self.context.get('active_ids')
         wizard_obj = self.pool.get('nfe.invoice.report').browse(
             self.cr, self.uid, active_ids)
@@ -449,14 +464,15 @@ class StockHistoryXls(report_xls):
                     'amount_total',
                     'state'
                 ])
-            row_data = self.xls_row_template(c_specs, [x[0] for x in c_specs])
+            row_data = self.xls_row_template(
+                c_specs, [x[0] for x in c_specs])
             row_pos = self.xls_write_row(
                 ws, row_pos, row_data, row_style=self.line_cell_style)
         pass
 
 
-StockHistoryXls(
+NFeXls(
     'report.wizard.nfe.faturamento',
     'nfe.invoice.report',
-    parser=StockHistoryXlsParser
+    parser=NFeXlsParser
 )
