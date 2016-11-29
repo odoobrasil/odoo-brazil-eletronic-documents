@@ -54,37 +54,41 @@ class AccountFiscalPosition(models.Model):
         self.ensure_one()
         values['cfop_id'] = self.cfop_id.id
         for tax_mapping in self.tax_ids:
-            if tax_mapping.cfop_src_id  and tax_mapping.tax_src_id  and\
+            if tax_mapping.cfop_src_id and tax_mapping.tax_src_id and \
                     tax_mapping.tax_code_src_id:
 
                 if tax_mapping.tax_code_src_id.id == values['icms_cst_id'] and \
-                        tax_mapping.cfop_src_id.code == str(values['cfop_xml']) and \
-                        tax_mapping.tax_src_id.id in [j[1] for j in values['invoice_line_tax_id']]:
-
+                                tax_mapping.cfop_src_id.code == str(
+                            values['cfop_xml']) and \
+                                tax_mapping.tax_src_id.id in [j[1] for j in
+                                                              values[
+                                                                  'invoice_line_tax_id']]:
                     self._apply_mapping(tax_mapping, values)
                     continue
 
             if tax_mapping.cfop_src_id and tax_mapping.tax_src_id:
 
                 if tax_mapping.cfop_src_id.code == str(values['cfop_xml']) and \
-                        tax_mapping.tax_src_id.id in [j[1] for j in values['invoice_line_tax_id']]:
-
+                                tax_mapping.tax_src_id.id in [j[1] for j in
+                                                              values[
+                                                                  'invoice_line_tax_id']]:
                     self._apply_mapping(tax_mapping, values)
                     continue
 
             if tax_mapping.cfop_src_id and tax_mapping.tax_code_src_id:
 
                 if tax_mapping.cfop_src_id.code == str(values['cfop_xml']) and \
-                        tax_mapping.tax_code_src_id.id == values['icms_cst_id']:
-
+                                tax_mapping.tax_code_src_id.id == values[
+                            'icms_cst_id']:
                     self._apply_mapping(tax_mapping, values)
                     continue
 
             if tax_mapping.tax_src_id and tax_mapping.tax_code_src_id:
 
                 if tax_mapping.tax_code_src_id.id == values['icms_cst_id'] and \
-                        tax_mapping.tax_src_id.id in [j[1] for j in values['invoice_line_tax_id']]:
-
+                                tax_mapping.tax_src_id.id in [j[1] for j in
+                                                              values[
+                                                                  'invoice_line_tax_id']]:
                     self._apply_mapping(tax_mapping, values)
                     continue
 

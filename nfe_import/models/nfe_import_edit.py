@@ -92,32 +92,31 @@ class NfeImportEdit(models.TransientModel):
             if self.import_from_invoice and not item.invoice_line_id:
                 raise Warning(
                     u'Escolha a linha da fatura correspondente: {0} - {1}'
-                    .format(str(indice), item.product_xml))
+                        .format(str(indice), item.product_xml))
             if self.import_from_invoice and \
-                    item.invoice_line_id.product_id.id != item.product_id.id:
+                            item.invoice_line_id.product_id.id != item.product_id.id:
                 raise Warning(
                     u'Produto incompatível com a linha da fatura: {0} - {1}'
-                    .format(str(indice), item.product_xml))
+                        .format(str(indice), item.product_xml))
             if self.import_from_invoice and \
-                    item.quantity_xml != item.invoice_line_id.quantity:
+                            item.quantity_xml != item.invoice_line_id.quantity:
                 raise Warning(
                     u'Quantidades do produto incompatíveis: {0} - {1}\n\
                     Quantidade xml: {2} - Quantidade Fatura: {3}'
-                    .format(str(indice), item.product_xml))
+                        .format(str(indice), item.product_xml))
             if not item.product_id:
                 raise Warning(u'Escolha o produto do item {0} - {1}'.format(
-                              str(indice), item.product_xml))
+                    str(indice), item.product_xml))
             if not item.cfop_id:
                 raise Warning(u'Escolha a CFOP do item {0} - {1}'.format(
-                              str(indice), item.product_xml))
+                    str(indice), item.product_xml))
 
             if not item.uom_id:
                 raise Warning(u'Escolha a Unidade do item {0} - {1}'.format(
-                              str(indice), item.product_xml))
+                    str(indice), item.product_xml))
 
-            if item.product_id.uom_po_id.category_id.id !=\
+            if item.product_id.uom_po_id.category_id.id != \
                     item.uom_id.category_id.id:
-
                 raise Warning(u'Unidades de medida incompatíveis no item \
                             {0} - {1}'.format(str(indice), item.product_xml))
             indice += 1
@@ -133,7 +132,6 @@ class NfeImportEdit(models.TransientModel):
 
             if not item.product_id:
                 if self.create_product:
-
                     product_created = self.product_create(
                         inv_values, line, item, self.product_category_id)
                     item.product_id = product_created
@@ -141,7 +139,8 @@ class NfeImportEdit(models.TransientModel):
 
                     line[2]['product_id'] = product_created.id
                     line[2]['uos_id'] = product_created.uom_id.id
-                    line[2]['account_id'] = product_created.property_account_income.id or product_created.categ_id.property_account_income_categ.id
+                    line[2][
+                        'account_id'] = product_created.property_account_income.id or product_created.categ_id.property_account_income_categ.id
 
                     self.env['product.supplierinfo'].create({
                         'name': self.supplier_id.id,
@@ -152,7 +151,8 @@ class NfeImportEdit(models.TransientModel):
 
             else:
                 line[2]['product_id'] = item.product_id.id
-                line[2]['account_id'] = item.product_id.property_account_income.id or item.product_id.categ_id.property_account_income_categ.id
+                line[2][
+                    'account_id'] = item.product_id.property_account_income.id or item.product_id.categ_id.property_account_income_categ.id
                 line[2]['uos_id'] = item.uom_id.id
                 line[2]['cfop_id'] = item.cfop_id.id
 
@@ -187,7 +187,7 @@ class NfeImportEdit(models.TransientModel):
             self._cr, self._uid, 'account', 'action_invoice_tree2')[1]
         res = action_obj.read(self._cr, self._uid, action_id)
         res['domain'] = res['domain'][:-1] + \
-            ",('id', 'in', %s)]" % [invoice.id]
+                        ",('id', 'in', %s)]" % [invoice.id]
         return res
 
     @api.multi
@@ -200,7 +200,8 @@ class NfeImportEdit(models.TransientModel):
                 'fiscal_document_id': inv_values['fiscal_document_id'],
                 'date_hour_invoice': inv_values['date_hour_invoice'],
                 'date_in_out': inv_values['date_in_out'],
-                'supplier_invoice_number': inv_values['supplier_invoice_number'],
+                'supplier_invoice_number': inv_values[
+                    'supplier_invoice_number'],
                 'comment': inv_values['comment'],
                 'fiscal_comment': inv_values['fiscal_comment'],
                 'nfe_access_key': inv_values['nfe_access_key'],
@@ -212,7 +213,8 @@ class NfeImportEdit(models.TransientModel):
                 'amount_freight': inv_values['amount_freight'],
                 'amount_insurance': inv_values['amount_insurance'],
                 'amount_costs': inv_values['amount_costs'],
-                'fiscal_document_related_ids': inv_values['fiscal_document_related_ids']
+                'fiscal_document_related_ids': inv_values[
+                    'fiscal_document_related_ids']
             }
             self.account_invoice_id.write(vals)
 
@@ -361,9 +363,9 @@ class NfeImportProducts(models.TransientModel):
             if self.invoice_line_id.quantity != self.quantity_xml:
                 return {'value': {'invoice_line_id': False, },
                         'warning': {
-                    'title': u'Atenção',
-                    'message': u'Quantidades incompatíveis'
-                }}
+                            'title': u'Atenção',
+                            'message': u'Quantidades incompatíveis'
+                        }}
             self.uom_id = self.invoice_line_id.product_id.uom_po_id
             self.product_id = self.invoice_line_id.product_id
             if self.invoice_line_id.cfop_id:

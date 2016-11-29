@@ -32,7 +32,6 @@ from openerp.exceptions import Warning
 
 from ..service.nfe_serializer import NFeSerializer
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -150,7 +149,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 if self.account_invoice_id:
                     line = self.account_invoice_id.invoice_line.filtered(
                         lambda x: x.product_id.id == inv_vals['product_id'] and
-                        x.quantity == inv_vals['quantity_xml'])
+                                  x.quantity == inv_vals['quantity_xml'])
                     inv_vals['invoice_line_id'] = line.id
 
                 product_import_ids.append((0, 0, inv_vals))
@@ -175,7 +174,8 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             model_obj = self.pool.get('ir.model.data')
             action_obj = self.pool.get('ir.actions.act_window')
             action_id = model_obj.get_object_reference(
-                self._cr, self._uid, 'nfe_import', 'action_nfe_import_edit_form')[1]
+                self._cr, self._uid, 'nfe_import',
+                'action_nfe_import_edit_form')[1]
             res = action_obj.read(self._cr, self._uid, action_id)
             res['res_id'] = import_edit.id
             return res

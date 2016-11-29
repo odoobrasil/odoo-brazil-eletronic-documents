@@ -1,5 +1,5 @@
 .. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
-    :alt: License: AGPL-3
+:alt: License: AGPL-3
 
 Importacao de Nota Fiscal Eletronica
 =============================================================
@@ -57,7 +57,7 @@ Maintainer
 ----------
 
 .. image:: https://brasil.odoo.com/logo.png
-   :alt: Odoo Brazil
+:alt: Odoo Brazil
    :target: http://brazil.odoo.com
 
 This module is maintained by the Odoo Brazil.

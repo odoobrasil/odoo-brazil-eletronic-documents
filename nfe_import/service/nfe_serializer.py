@@ -35,7 +35,6 @@ from pysped.nfe.leiaute.consrecinfe_310 import ProtNFe
 
 
 class NFeSerializer(object):
-
     def __init__(self):
         self.nfe = None
         self.nfref = None
@@ -257,7 +256,7 @@ class NFeSerializer(object):
 
             partner['is_company'] = True
             partner['name'] = self.nfe.infNFe.emit.xFant.valor or \
-                self.nfe.infNFe.emit.xNome.valor
+                              self.nfe.infNFe.emit.xNome.valor
             partner['legal_name'] = self.nfe.infNFe.emit.xNome.valor
             partner['cnpj_cpf'] = cnpj_cpf
             partner['inscr_est'] = self.nfe.infNFe.emit.IE.valor
@@ -270,9 +269,9 @@ class NFeSerializer(object):
 
             city_id = self.env['l10n_br_base.city'].search(
                 [('ibge_code', '=',
-                    str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[2:]),
+                  str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[2:]),
                  ('state_id.ibge_code', '=',
-                    str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[0:2])])
+                  str(self.nfe.infNFe.emit.enderEmit.cMun.valor)[0:2])])
 
             if len(city_id) > 0:
                 partner['l10n_br_city_id'] = city_id[0].id
@@ -304,7 +303,7 @@ class NFeSerializer(object):
         raise Exception(u'O xml a ser importado foi emitido para o CNPJ {0}'
                         u' - {1}\no qual não corresponde ao CNPJ cadastrado'
                         u' na empresa\nO arquivo não será importado.'.format(
-                            cnpj, self.nfe.infNFe.dest.xNome.valor))
+            cnpj, self.nfe.infNFe.dest.xNome.valor))
 
     def _get_details(self):
         #
@@ -328,9 +327,9 @@ class NFeSerializer(object):
                  ('product_code', '=', self.det.prod.cProd.valor)])
             if len(supplierinfo_ids) > 0:
                 supplier_info = supplierinfo_ids[0]
-                inv_line['product_id'] = supplier_info.product_tmpl_id\
+                inv_line['product_id'] = supplier_info.product_tmpl_id \
                     .product_variant_ids[0].id
-                inv_line['name'] = supplier_info.product_tmpl_id\
+                inv_line['name'] = supplier_info.product_tmpl_id \
                     .product_variant_ids[0].name
             else:
                 inv_line['product_id'] = False
@@ -545,7 +544,8 @@ class NFeSerializer(object):
         res = {}
         cnpj_cpf = ''
 
-        res['freight_responsibility'] = str(self.nfe.infNFe.transp.modFrete.valor)
+        res['freight_responsibility'] = str(
+            self.nfe.infNFe.transp.modFrete.valor)
         # Realizamos a importacao da transportadora
         if self.nfe.infNFe.transp.transporta.CNPJ.valor:
             cnpj_cpf = self.nfe.infNFe.transp.transporta.CNPJ.valor
@@ -593,7 +593,7 @@ class NFeSerializer(object):
                 'kind_of_packages': self.nfe.infNFe.transp.vol[0].esp.valor,
                 'brand_of_packages': self.nfe.infNFe.transp.vol[0].marca.valor,
                 'notation_of_packages':
-                self.nfe.infNFe.transp.vol[0].nVol.valor,
+                    self.nfe.infNFe.transp.vol[0].nVol.valor,
                 'weight': self.nfe.infNFe.transp.vol[0].pesoL.valor,
                 'weight_net': self.nfe.infNFe.transp.vol[0].pesoB.valor
             }
@@ -636,7 +636,7 @@ class NFeSerializer(object):
     def _get_protocol(self):
         protocol = {
             'nfe_status': self.protNFe.infProt.cStat.valor + ' - ' +
-            self.protNFe.infProt.xMotivo.valor,
+                          self.protNFe.infProt.xMotivo.valor,
             'nfe_protocol_number': self.protNFe.infProt.nProt.valor,
             'nfe_date': self.protNFe.infProt.dhRecbto.valor,
         }
