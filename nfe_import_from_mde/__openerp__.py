@@ -15,10 +15,35 @@
 #                                                                             #
 # You should have received a copy of the GNU Affero General Public License    #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
 ###############################################################################
 
-from . import nfe_schedule
-from . import service
-from . import res_company
-from . import nfe_mde
-from . import tests
+{
+    'name': 'Importação de XML Diretamente do Manifesto',
+    'version': '1.0',
+    'category': 'NFE',
+    'description': """Integra os módulos de importação do xml e
+        manifesto de destinatário""",
+    'author': 'Danimar Ribeiro - Trustcode',
+    'license': 'AGPL-3',
+    'website': 'http://www.trustcode.com.br',
+    'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
+                     'Mackilem Van der Laan Soares <mack.vdl@gmail.com>'
+                     ],
+    'description': """
+        Com este módulo você pode programar para realizar a importação automática
+        de NF-e apartir do módulo de Manifesto do Destinatário (MDE).
+        O MDE periodicamente busca as notas destinadas a empresa, este módulo
+        pega as notas baixadas e faz a importação.
+    """,
+    'depends': [
+        'nfe_import',
+        'nfe_mde',
+    ],
+    'data': [
+        'views/nfe_mde_view.xml',
+        'report/report_danfe.xml',
+        'wizard/wizard_nfe_import_xml_view.xml',
+    ],
+    'installable': True
+}
