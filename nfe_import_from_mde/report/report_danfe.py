@@ -71,6 +71,7 @@ class ExternalPdf(render):
 
 class CustomReportDanfe(report_int):
     def create(self, cr, uid, ids, datas, context=None):
+
         pool = pooler.get_pool(cr.dbname)
 
         nfe_obj = pool['nfe.mde']

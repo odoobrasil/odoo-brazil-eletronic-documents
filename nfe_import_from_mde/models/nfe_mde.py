@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -19,7 +19,7 @@
 ###############################################################################
 
 from openerp import models, api, fields
-from openerp.exceptions import Warning
+from openerp.exceptions import Warning as UserError
 
 
 class NfeMde(models.Model):
@@ -28,12 +28,13 @@ class NfeMde(models.Model):
     xml_downloaded = fields.Boolean(u'Xml já baixado?', default=False)
     xml_imported = fields.Boolean(u'Xml já importado?', default=False)
 
-    @api.one
+    @api.multi
     def action_download_xml(self):
-        if not self.xml_downloaded:
-            value = super(NfeMde, self).action_download_xml()
-            if value:
-                self.write({'xml_downloaded': True})
+        for record in self:
+            if not record.xml_downloaded:
+                value = super(NfeMde, record).action_download_xml()
+                if value:
+                    record.write({'xml_downloaded': True})
         return True
 
     @api.multi
@@ -63,7 +64,7 @@ class NfeMde(models.Model):
             return res
 
         else:
-            raise Warning(
+            raise UserError(
                 u'O arquivo xml já não existe mais no caminho especificado\n'
                 u'Contate o responsável pelo sistema')
 

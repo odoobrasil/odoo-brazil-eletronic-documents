@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -20,10 +20,8 @@
 
 {
     'name': 'Importação de XML Diretamente do Manifesto',
-    'version': '1.0',
+    'version': '8.0.0.0.0',
     'category': 'NFE',
-    'description': """Integra os módulos de importação do xml e
-        manifesto de destinatário""",
     'author': 'Danimar Ribeiro - Trustcode, Odoo Community Association (OCA)',
     'license': 'AGPL-3',
     'website': 'http://www.odoobrasil.org.br',
