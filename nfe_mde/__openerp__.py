@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -21,24 +21,9 @@
     'name': 'Manifesto Destinatário NFe',
     'version': '8.0.1.0.0',
     'category': 'NFE',
-    'author': 'Danimar Ribeiro',
+    'author': 'Trustcode, KMEE, Odoo Community Association (OCA)',
+    'website': 'http://www.odoobrasil.org.br',
     'license': 'AGPL-3',
-    'website': 'http://www.trustcode.com.br',
-    'description': """
-        Implementa a consulta de nfe periodicamente no SEFAZ
-      Este módulo serve para efetuar download de notas em que são destinada
-      a empresa.
-      Manifesta a ciência ou desconhecimento da NF-e
-
-      Dependencias: pysped, geraldo, pyxmlsec
-      Instalando pyxmlsec
-        sudo pip install pyxmlsec
-        Dependencias ->
-        sudo apt-get install libxmlsec1-dev
-        sudo apt-get install libxml2-dev
-      Instalando geraldo
-        sudo pip install geraldo
-    """,
     'depends': [
         'nfe',
     ],
@@ -48,5 +33,4 @@
         'views/nfe_mde_view.xml'
     ],
     'installable': True,
-    'active': False,
 }

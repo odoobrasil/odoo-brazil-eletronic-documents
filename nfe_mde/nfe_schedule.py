@@ -1,4 +1,4 @@
-# coding=utf-8
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -33,7 +33,7 @@ from .service.mde import distribuicao_nfe
 _logger = logging.getLogger(__name__)
 
 
-class nfe_schedule(models.TransientModel):
+class NfeSchedule(models.TransientModel):
     _name = 'nfe.schedule'
 
     state = fields.Selection(
@@ -165,6 +165,7 @@ class nfe_schedule(models.TransientModel):
                         u'Não foi possivel efetuar a consulta!\n '
                         u'Verifique o log')
 
-    @api.one
+    @api.multi
     def execute_download(self):
-        self.schedule_download(raise_error=True)
+        for record in self:
+            record.schedule_download(raise_error=True)

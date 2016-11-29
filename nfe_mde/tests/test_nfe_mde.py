@@ -23,9 +23,10 @@ from mock import patch
 from openerp.tests import common
 
 
-class Test_Nfe_Mde(common.TransactionCase):
+class TestNfeMde(common.TransactionCase):
+
     def setUp(self):
-        super(Test_Nfe_Mde, self).setUp()
+        super(TestNfeMde, self).setUp()
         self.mde = self.env['nfe.mde'].create(
             {'company_id': 1, 'chNFe': '123'})
 

@@ -1,4 +1,4 @@
-# coding=utf-8
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -19,7 +19,7 @@
 from openerp import models, fields
 
 
-class res_company(models.Model):
+class ResCompany(models.Model):
     _inherit = 'res.company'
 
     last_nsu_nfe = fields.Char(string="Último NSU usado", size=20, default='0')

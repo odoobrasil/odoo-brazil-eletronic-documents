@@ -1,4 +1,4 @@
-# coding=utf-8
+# coding: utf-8
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2015  Danimar Ribeiro www.trustcode.com.br                    #
@@ -21,7 +21,7 @@
 import base64
 from datetime import datetime
 
-from openerp import models, api, fields
+from openerp import models, api, fields, _
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
 from openerp.exceptions import ValidationError
@@ -29,13 +29,13 @@ from openerp.exceptions import ValidationError
 from .service.mde import download_nfe, send_event
 
 
-class L10n_brDocumentEvent(models.Model):
+class L10nBrDocumentEvent(models.Model):
     _inherit = 'l10n_br_account.document_event'
 
     mde_event_id = fields.Many2one('nfe.mde', string="Manifesto")
 
 
-class Nfe_Mde(models.Model):
+class NfeMde(models.Model):
     _name = 'nfe.mde'
     _rec_name = 'nSeqEvento'
     _inherit = [
@@ -87,14 +87,17 @@ class Nfe_Mde(models.Model):
         'l10n_br_account.document_event',
         'mde_event_id', string="Documentos eletrônicos")
 
-    @api.one
     @api.constrains('CNPJ', 'partner_id')
     def _check_partner_id(self):
-        if self.partner_id and self.CNPJ != self.partner_id.cnpj_cpf:
-            raise ValidationError(
-                "O Parceiro não possui o mesmo CNPJ/CPF do manifesto atual")
+        for partner in self:
+            if (partner.partner_id and
+                    partner.CNPJ != partner.partner_id.cnpj_cpf):
+                raise ValidationError(_(
+                    "O Parceiro não possui o "
+                    "mesmo CNPJ/CPF do manifesto atual"))
 
-    def _needaction_domain_get(self, cr, uid, context=None):
+    @api.model
+    def _needaction_domain_get(self):
         return [('state', '=', 'pending')]
 
     def _create_event(self, response, nfe_result, type_event='13'):
@@ -120,110 +123,106 @@ class Nfe_Mde(models.Model):
                 'res_id': event.id
             })
 
-    @api.one
+    @api.multi
     def action_known_emission(self):
-        validate_nfe_configuration(self.company_id)
-        nfe_result = send_event(
-            self.company_id, self.chNFe, 'ciencia_operacao')
-        env_events = self.env['l10n_br_account.document_event']
-
-        event = self._create_event('Ciência da operação', nfe_result)
-
-        if nfe_result['code'] == '135':
-            self.state = 'ciente'
-        elif nfe_result['code'] == '573':
-            self.state = 'ciente'
-            event['response'] = 'Ciência da operação já previamente realizada'
-        else:
-            event['response'] = 'Ciência da operação sem êxito'
-
-        event = env_events.create(event)
-        self._create_attachment(event, nfe_result)
-        return True
-
-    @api.one
-    def action_confirm_operation(self):
-        validate_nfe_configuration(self.company_id)
-        nfe_result = send_event(
-            self.company_id,
-            self.chNFe,
-            'confirma_operacao')
-        env_events = self.env['l10n_br_account.document_event']
-
-        event = self._create_event('Confirmação da operação', nfe_result)
-
-        if nfe_result['code'] == '135':
-            self.state = 'confirmado'
-        else:
-            event['response'] = 'Confirmação da operação sem êxito'
-
-        event = env_events.create(event)
-        self._create_attachment(event, nfe_result)
-        return True
-
-    @api.one
-    def action_unknown_operation(self):
-        validate_nfe_configuration(self.company_id)
-        nfe_result = send_event(
-            self.company_id,
-            self.chNFe,
-            'desconhece_operacao')
-        env_events = self.env['l10n_br_account.document_event']
-
-        event = self._create_event('Desconhecimento da operação', nfe_result)
-
-        if nfe_result['code'] == '135':
-            self.state = 'desconhecido'
-        else:
-            event['response'] = 'Desconhecimento da operação sem êxito'
-
-        event = env_events.create(event)
-        self._create_attachment(event, nfe_result)
-        return True
-
-    @api.one
-    def action_not_operation(self):
-        validate_nfe_configuration(self.company_id)
-        nfe_result = send_event(
-            self.company_id,
-            self.chNFe,
-            'nao_realizar_operacao')
-        env_events = self.env['l10n_br_account.document_event']
-        event = self._create_event('Operação não realizada', nfe_result)
-        if nfe_result['code'] == '135':
-            self.state = 'nap_realizado'
-        else:
-            event['response'] = 'Tentativa de Operação não realizada sem êxito'
-
-        event = env_events.create(event)
-        self._create_attachment(event, nfe_result)
-        return True
-
-    @api.one
-    def action_download_xml(self):
-        validate_nfe_configuration(self.company_id)
-        nfe_result = download_nfe(self.company_id, [self.chNFe])
-        env_events = self.env['l10n_br_account.document_event']
-
-        if nfe_result['code'] == '140':
-            event = self._create_event('Download NFe concluido', nfe_result,
-                                       type_event='10')
-            env_events.create(event)
-            file_name = 'NFe%s.xml' % self.chNFe
-            self.env['ir.attachment'].create(
-                {
-                    'name': file_name,
-                    'datas': base64.b64encode(nfe_result['file_returned']),
-                    'datas_fname': file_name,
-                    'description':
-                        u'XML NFe - Download manifesto do destinatário',
-                    'res_model': 'nfe.mde',
-                    'res_id': self.id
-                })
-
-        else:
-            event = self._create_event('Download NFe não efetuado', nfe_result,
-                                       type_event='10')
+        for record in self:
+            validate_nfe_configuration(record.company_id)
+            nfe_result = send_event(
+                record.company_id, record.chNFe, 'ciencia_operacao')
+            env_events = record.env['l10n_br_account.document_event']
+            event = record._create_event('Ciência da operação', nfe_result)
+            if nfe_result['code'] == '135':
+                record.state = 'ciente'
+            elif nfe_result['code'] == '573':
+                record.state = 'ciente'
+                event['response'] = \
+                    'Ciência da operação já previamente realizada'
+            else:
+                event['response'] = 'Ciência da operação sem êxito'
             event = env_events.create(event)
-            self._create_attachment(event, nfe_result)
+            record._create_attachment(event, nfe_result)
+        return True
+
+    @api.multi
+    def action_confirm_operation(self):
+        for record in self:
+            validate_nfe_configuration(record.company_id)
+            nfe_result = send_event(
+                record.company_id,
+                record.chNFe,
+                'confirma_operacao')
+            env_events = record.env['l10n_br_account.document_event']
+            event = record._create_event('Confirmação da operação', nfe_result)
+            if nfe_result['code'] == '135':
+                record.state = 'confirmado'
+            else:
+                event['response'] = 'Confirmação da operação sem êxito'
+            event = env_events.create(event)
+            record._create_attachment(event, nfe_result)
+        return True
+
+    @api.multi
+    def action_unknown_operation(self):
+        for record in self:
+            validate_nfe_configuration(record.company_id)
+            nfe_result = send_event(
+                record.company_id,
+                record.chNFe,
+                'desconhece_operacao')
+            env_events = record.env['l10n_br_account.document_event']
+            event = record._create_event(
+                'Desconhecimento da operação', nfe_result)
+            if nfe_result['code'] == '135':
+                record.state = 'desconhecido'
+            else:
+                event['response'] = 'Desconhecimento da operação sem êxito'
+            event = env_events.create(event)
+            record._create_attachment(event, nfe_result)
+        return True
+
+    @api.multi
+    def action_not_operation(self):
+        for record in self:
+            validate_nfe_configuration(record.company_id)
+            nfe_result = send_event(
+                record.company_id,
+                record.chNFe,
+                'nao_realizar_operacao')
+            env_events = record.env['l10n_br_account.document_event']
+            event = record._create_event('Operação não realizada', nfe_result)
+            if nfe_result['code'] == '135':
+                record.state = 'nap_realizado'
+            else:
+                event['response'] = \
+                    'Tentativa de Operação não realizada sem êxito'
+            event = env_events.create(event)
+            record._create_attachment(event, nfe_result)
+        return True
+
+    @api.multi
+    def action_download_xml(self):
+        for record in self:
+            validate_nfe_configuration(record.company_id)
+            nfe_result = download_nfe(record.company_id, [record.chNFe])
+            env_events = record.env['l10n_br_account.document_event']
+            if nfe_result['code'] == '140':
+                event = record._create_event(
+                    'Download NFe concluido', nfe_result, type_event='10')
+                env_events.create(event)
+                file_name = 'NFe%s.xml' % record.chNFe
+                record.env['ir.attachment'].create(
+                    {
+                        'name': file_name,
+                        'datas': base64.b64encode(nfe_result['file_returned']),
+                        'datas_fname': file_name,
+                        'description':
+                            u'XML NFe - Download manifesto do destinatário',
+                        'res_model': 'nfe.mde',
+                        'res_id': record.id
+                    })
+            else:
+                event = record._create_event(
+                    'Download NFe não efetuado', nfe_result, type_event='10')
+                event = env_events.create(event)
+                record._create_attachment(event, nfe_result)
         return True

@@ -26,8 +26,7 @@
             <field name="arch" type="xml">
                 <form string="Verificar downloads pendentes" version="7.0">
                     <field invisible="1" name="state"/>
-                    <label string="Ao clicar em verificar o Odoo irá buscar as notas fiscais pendentes de
-			    		processamento no SEFAZ"></label>
+                    <label string="Ao clicar em verificar o Odoo irá buscar as notas fiscais pendentes de processamento no SEFAZ"></label>
                     <footer states="init">
                         <button string="Verificar" name="execute_download"
                                 type="object" class="oe_highlight"/>
@@ -61,7 +60,6 @@
                   name="Verificar NFe para download"
                   parent="nfe_attach.menu_l10n_br_account_processamento_periodico"
                   action="action_nfe_schedule_download_nfe"/>
-
 
     </data>
 </openerp>
