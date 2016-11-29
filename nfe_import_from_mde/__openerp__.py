@@ -24,12 +24,9 @@
     'category': 'NFE',
     'description': """Integra os módulos de importação do xml e
         manifesto de destinatário""",
-    'author': 'Danimar Ribeiro - TrustCode',
+    'author': 'Danimar Ribeiro - Trustcode, Odoo Community Association (OCA)',
     'license': 'AGPL-3',
-    'website': 'http://www.trustcode.com.br',
-    'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
-                     'Mackilem Van der Laan Soares <mack.vdl@gmail.com>'
-                     ],
+    'website': 'http://www.odoobrasil.org.br',
     'depends': [
         'nfe_import',
         'nfe_mde',

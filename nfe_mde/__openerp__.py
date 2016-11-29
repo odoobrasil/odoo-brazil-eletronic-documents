@@ -21,7 +21,7 @@
     'name': 'Manifesto Destinatário NFe',
     'version': '8.0.1.0.0',
     'category': 'NFE',
-    'author': 'Trustcode, KMEE, Odoo Community Association (OCA)',
+    'author': 'Trustcode, Odoo Community Association (OCA)',
     'website': 'http://www.odoobrasil.org.br',
     'license': 'AGPL-3',
     'depends': [
