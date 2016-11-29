@@ -45,6 +45,6 @@
     'css': [
         'static/src/css/nfe_import.css'
     ],
-    "installable": True,
+    'installable': False,
     "auto_install": False,
 }
