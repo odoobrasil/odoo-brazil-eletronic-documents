@@ -20,11 +20,13 @@
 
 import base64
 from datetime import datetime
+
 from openerp import models, api, fields
-from openerp.exceptions import ValidationError
-from .service.mde import download_nfe, send_event
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
+from openerp.exceptions import ValidationError
+
+from .service.mde import download_nfe, send_event
 
 
 class L10n_brDocumentEvent(models.Model):
@@ -106,7 +108,8 @@ class Nfe_Mde(models.Model):
         }
 
     def _create_attachment(self, event, result):
-        file_name = 'evento-manifesto-%s.xml' % datetime.now().strftime('%Y-%m-%d-%H-%M')
+        file_name = 'evento-manifesto-%s.xml' % datetime.now().strftime(
+            '%Y-%m-%d-%H-%M')
         self.env['ir.attachment'].create(
             {
                 'name': file_name,
@@ -212,7 +215,8 @@ class Nfe_Mde(models.Model):
                     'name': file_name,
                     'datas': base64.b64encode(nfe_result['file_returned']),
                     'datas_fname': file_name,
-                    'description': u'XML NFe - Download manifesto do destinatário',
+                    'description':
+                        u'XML NFe - Download manifesto do destinatário',
                     'res_model': 'nfe.mde',
                     'res_id': self.id
                 })

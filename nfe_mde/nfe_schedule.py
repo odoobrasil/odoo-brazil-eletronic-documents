@@ -17,16 +17,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
 
-import re
 import base64
 import logging
-from lxml import objectify
+import re
 from datetime import datetime
-from .service.mde import distribuicao_nfe
+
+from lxml import objectify
 from openerp import models, api, fields
-from openerp.exceptions import Warning as UserError
 from openerp.addons.nfe.sped.nfe.validator.config_check import \
     validate_nfe_configuration
+from openerp.exceptions import Warning as UserError
+
+from .service.mde import distribuicao_nfe
 
 _logger = logging.getLogger(__name__)
 
@@ -155,12 +157,13 @@ class nfe_schedule(models.TransientModel):
                             'res_id': obj.id
                         })
 
-            except Exception as ex:
+            except Exception:
                 _logger.error("Erro ao consultar Manifesto", exc_info=True)
                 if raise_error:
                     raise UserError(
                         u'Atenção',
-                        u'Não foi possivel efetuar a consulta!\n Verifique o log')
+                        u'Não foi possivel efetuar a consulta!\n '
+                        u'Verifique o log')
 
     @api.one
     def execute_download(self):

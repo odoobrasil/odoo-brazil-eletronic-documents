@@ -19,14 +19,11 @@
 #                                                                             #
 ###############################################################################
 
-import time
-from openerp.tests import common
-from openerp.tools import DEFAULT_SERVER_DATE_FORMAT
 from mock import patch
+from openerp.tests import common
 
 
 class Test_Nfe_Mde(common.TransactionCase):
-
     def setUp(self):
         super(Test_Nfe_Mde, self).setUp()
         self.mde = self.env['nfe.mde'].create(
