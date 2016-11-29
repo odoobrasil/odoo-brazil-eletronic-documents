@@ -28,7 +28,14 @@ from datetime import datetime
 from decimal import Decimal
 
 from openerp.tools.translate import _
-from pysped.nfe.leiaute.consrecinfe_310 import ProtNFe
+from openerp.exceptions import Warning as UserError
+
+try:
+    from pysped.nfe.leiaute.consrecinfe_310 import ProtNFe
+except ImportError:
+    raise UserError(
+        _(u'Erro!'),
+        _(u"Biblioteca PySPED não instalada!"))
 
 
 class NFeSerializer(object):
@@ -79,7 +86,7 @@ class NFeSerializer(object):
 
         adittional = self._get_additional_information()
         weight_data = self._get_weight_data()
-        protocol = self._get_protocol()
+        # protocol = self._get_protocol()
         total = self._get_total()
 
         invoice_vals.update(carrier_data)
@@ -254,7 +261,7 @@ class NFeSerializer(object):
 
             partner['is_company'] = True
             partner['name'] = self.nfe.infNFe.emit.xFant.valor or \
-                              self.nfe.infNFe.emit.xNome.valor
+                self.nfe.infNFe.emit.xNome.valor
             partner['legal_name'] = self.nfe.infNFe.emit.xNome.valor
             partner['cnpj_cpf'] = cnpj_cpf
             partner['inscr_est'] = self.nfe.infNFe.emit.IE.valor
@@ -301,7 +308,7 @@ class NFeSerializer(object):
         raise Exception(u'O xml a ser importado foi emitido para o CNPJ {0}'
                         u' - {1}\no qual não corresponde ao CNPJ cadastrado'
                         u' na empresa\nO arquivo não será importado.'.format(
-            cnpj, self.nfe.infNFe.dest.xNome.valor))
+                            cnpj, self.nfe.infNFe.dest.xNome.valor))
 
     def _get_details(self):
         #
@@ -634,7 +641,7 @@ class NFeSerializer(object):
     def _get_protocol(self):
         protocol = {
             'nfe_status': self.protNFe.infProt.cStat.valor + ' - ' +
-                          self.protNFe.infProt.xMotivo.valor,
+            self.protNFe.infProt.xMotivo.valor,
             'nfe_protocol_number': self.protNFe.infProt.nProt.valor,
             'nfe_date': self.protNFe.infProt.dhRecbto.valor,
         }
@@ -645,7 +652,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import NFe_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
 
@@ -656,7 +663,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import NFRef_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
 
@@ -667,7 +674,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import Det_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
 
@@ -677,7 +684,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import DI_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
         return DI_310()
@@ -686,7 +693,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import Adi_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
         return Adi_310()
@@ -695,7 +702,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import Vol_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
         return Vol_310()
@@ -705,7 +712,7 @@ class NFeSerializer(object):
         try:
             from pysped.nfe.leiaute import Dup_310
         except ImportError:
-            raise orm.except_orm(
+            raise UserError(
                 _(u'Erro!'),
                 _(u"Biblioteca PySPED não instalada!"))
 
@@ -753,4 +760,4 @@ class NFeSerializer(object):
             zip = re.sub('[^0-9]', '', zip)
             if len(zip) == 8:
                 zip = "%s-%s" % (zip[0:4], zip[4:7])
-        return cnpj_cpf
+        return zip

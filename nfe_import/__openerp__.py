@@ -41,7 +41,6 @@
         'views/nfe_import_view.xml',
     ],
     'css': ['static/src/css/nfe_import.css'],
-    'active': False,
     "installable": True,
     "auto_install": False,
 }

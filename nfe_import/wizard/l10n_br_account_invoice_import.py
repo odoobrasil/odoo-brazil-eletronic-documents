@@ -28,7 +28,7 @@ import os
 
 from openerp import models, fields, api
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
-from openerp.exceptions import Warning
+from openerp.exceptions import Warning as UserError
 from openerp.tools.translate import _
 
 from ..service.nfe_serializer import NFeSerializer
@@ -53,8 +53,9 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
         help=u'Cria o fornecedor automaticamente caso não esteja cadastrado')
     account_invoice_id = fields.Many2one('account.invoice',
                                          u'Fatura de compra')
-    supplier_partner_id = fields.Many2one('res.partner', string=u"Parceiro",
-                                          related="account_invoice_id.partner_id")
+    supplier_partner_id = fields.Many2one(
+        'res.partner', string=u"Parceiro",
+        related="account_invoice_id.partner_id")
     fiscal_category_id = fields.Many2one(
         'l10n_br_account.fiscal.category', 'Categoria Fiscal')
     fiscal_position = fields.Many2one(
@@ -68,10 +69,10 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
     def _check_extension(self, filename):
         if not filename:
-            raise Warning(_('Please select a correct XML file'))
+            raise UserError(_('Please select a correct XML file'))
         (__, ftype) = os.path.splitext(filename)
         if ftype.lower() not in ('.xml'):
-            raise Warning(_('Please select a correct XML file'))
+            raise UserError(_('Please select a correct XML file'))
         return ftype
 
     def _get_nfe_factory(self, nfe_version):
@@ -96,7 +97,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             self.ensure_one()
             importer = self[0]
 
-            ftype = self._check_extension(importer.file_name)
+            self._check_extension(importer.file_name)
 
             nfe_serializer = NFeSerializer()
             eDoc = nfe_serializer.import_edoc(self.env, importer.edoc_input)[0]
@@ -107,12 +108,12 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                     inv_values,
                     self.account_invoice_id)
 
-            if importer.create_partner and inv_values['partner_id'] == False:
+            if importer.create_partner and not inv_values['partner_id']:
                 partner = self.env['res.partner'].create(
                     inv_values['partner_values'])
                 inv_values['partner_id'] = partner.id
                 inv_values['account_id'] = partner.property_account_payable.id
-            elif inv_values['partner_id'] == False:
+            elif not inv_values['partner_id']:
                 raise Exception(
                     u'Fornecedor não cadastrado, o xml não será importado\n'
                     u'Marque a opção "Criar fornecedor" se deseja importar '
@@ -150,14 +151,15 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 if self.account_invoice_id:
                     line = self.account_invoice_id.invoice_line.filtered(
                         lambda x: x.product_id.id == inv_vals['product_id'] and
-                                  x.quantity == inv_vals['quantity_xml'])
+                        x.quantity == inv_vals['quantity_xml'])
                     inv_vals['invoice_line_id'] = line.id
 
                 product_import_ids.append((0, 0, inv_vals))
 
             values = {
                 'supplier_id': inv_values['partner_id'],
-                'import_from_invoice': True if importer.account_invoice_id else False,
+                'import_from_invoice': (
+                    True if importer.account_invoice_id else False),
                 'account_invoice_id': importer.account_invoice_id.id,
                 'fiscal_category_id': importer.fiscal_category_id.id,
                 'fiscal_position': importer.fiscal_position.id,
@@ -183,7 +185,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
         except Exception as e:
             if isinstance(e.message, unicode):
                 _logger.error(e.message, exc_info=True)
-                raise Warning(
+                raise UserError(
                     u'Erro ao tentar importar o xml\n'
                     u'Mensagem de erro:\n{0}'.format(
                         e.message))
@@ -195,11 +197,11 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                     exc_info=True)
             else:
                 _logger.error(str(e), exc_info=True)
-            raise Warning(
+            raise UserError(
                 u'Erro ao tentar importar o xml\n'
                 u'Mensagem de erro:\n{0}'.format(
                     e.message.decode('utf-8', 'ignore')))
 
     @api.multi
-    def done(self, cr, uid, ids, context=False):
+    def done(self):
         return True

@@ -60,5 +60,6 @@
                   name="Importar Documento Eletrônico"
                   parent="menu_l10n_br_account_others"
                   action="action_l10n_br_account_periodic_processing_edoc_import"/>
+
     </data>
 </openerp>
