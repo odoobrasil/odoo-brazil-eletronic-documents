@@ -18,15 +18,11 @@
 #                                                                             #
 ###############################################################################
 
-import os.path
-import base64
 from openerp import models, api, fields
 from openerp.exceptions import Warning
-from pysped.nfe.danfe import DANFE
-from pysped.nfe.leiaute import ProcNFe_310
 
 
-class Nfe_Mde(models.Model):
+class NfeMde(models.Model):
     _inherit = 'nfe.mde'
 
     xml_downloaded = fields.Boolean(u'Xml já baixado?', default=False)
@@ -35,7 +31,7 @@ class Nfe_Mde(models.Model):
     @api.one
     def action_download_xml(self):
         if not self.xml_downloaded:
-            value = super(Nfe_Mde, self).action_download_xml()
+            value = super(NfeMde, self).action_download_xml()
             if value:
                 self.write({'xml_downloaded': True})
         return True
@@ -55,7 +51,8 @@ class Nfe_Mde(models.Model):
             nfe_import = self.env[
                 'nfe_import.account_invoice_import'].create(import_doc)
 
-            action_name = 'action_l10n_br_account_periodic_processing_edoc_import'
+            action_name = \
+                'action_l10n_br_account_periodic_processing_edoc_import'
             model_obj = self.pool.get('ir.model.data')
             action_obj = self.pool.get('ir.actions.act_window')
             action_id = model_obj.get_object_reference(
@@ -66,8 +63,9 @@ class Nfe_Mde(models.Model):
             return res
 
         else:
-            raise Warning(u'O arquivo xml já não existe mais no caminho especificado\n'
-                          u'Contate o responsável pelo sistema')
+            raise Warning(
+                u'O arquivo xml já não existe mais no caminho especificado\n'
+                u'Contate o responsável pelo sistema')
 
     @api.multi
     def action_visualizar_danfe(self):

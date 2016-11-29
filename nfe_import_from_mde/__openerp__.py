@@ -30,12 +30,6 @@
     'contributors': ['Danimar Ribeiro <danimaribeiro@gmail.com>',
                      'Mackilem Van der Laan Soares <mack.vdl@gmail.com>'
                      ],
-    'description': """
-        Com este módulo você pode programar para realizar a importação automática
-        de NF-e apartir do módulo de Manifesto do Destinatário (MDE).
-        O MDE periodicamente busca as notas destinadas a empresa, este módulo
-        pega as notas baixadas e faz a importação.
-    """,
     'depends': [
         'nfe_import',
         'nfe_mde',

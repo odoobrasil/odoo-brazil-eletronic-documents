@@ -20,12 +20,14 @@
 ###############################################################################
 
 from __future__ import with_statement
+
 import base64
-from openerp.report.render import render
-from openerp.report.interface import report_int
-from openerp.exceptions import Warning as UserError
-from openerp import pooler
 from StringIO import StringIO
+
+from openerp import pooler
+from openerp.exceptions import Warning as UserError
+from openerp.report.interface import report_int
+from openerp.report.render import render
 from pyPdf import PdfFileReader, PdfFileWriter
 
 
@@ -58,7 +60,6 @@ def print_danfe(xml_nfe):
 
 
 class ExternalPdf(render):
-
     def __init__(self, pdf):
         render.__init__(self)
         self.pdf = pdf
@@ -69,7 +70,6 @@ class ExternalPdf(render):
 
 
 class CustomReportDanfe(report_int):
-
     def create(self, cr, uid, ids, datas, context=None):
         pool = pooler.get_pool(cr.dbname)
 
@@ -93,5 +93,6 @@ class CustomReportDanfe(report_int):
         self.obj = ExternalPdf(pdf_string)
         self.obj.render()
         return (self.obj.pdf, 'pdf')
+
 
 CustomReportDanfe('report.danfe_nfe_mde')
