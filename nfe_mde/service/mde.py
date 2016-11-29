@@ -16,14 +16,14 @@
 # You should have received a copy of the GNU Affero General Public License    #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
-import re
-import os
 import base64
-import gzip
 import cStringIO
+import gzip
+import logging
+import os
+import re
 from datetime import datetime
 
-import logging
 _logger = logging.getLogger(__name__)
 
 try:
@@ -33,7 +33,6 @@ except ImportError as exc:
 
 
 def __processo(company):
-
     p = ProcessadorNFe()
     p.ambiente = int(company.nfe_environment)
     p.estado = company.partner_id.l10n_br_city_id.state_id.code
@@ -75,11 +74,9 @@ def distribuicao_nfe(company, ultimo_nsu):
         nsu='')
 
     if result.resposta.status == 200:  # Webservice ok
-        if result.resposta.cStat.valor == '137' or \
-                result.resposta.cStat.valor == '138':
-
+        if (result.resposta.cStat.valor == '137' or
+                result.resposta.cStat.valor == '138'):
             nfe_list = []
-            save_path = _create_dirs(company)
             for doc in result.resposta.loteDistDFeInt.docZip:
                 orig_file_desc = gzip.GzipFile(
                     mode='r',
@@ -166,14 +163,12 @@ def download_nfe(company, list_nfe):
     result = p.baixar_notas_destinadas(
         cnpj=cnpj_partner,
         lista_chaves=list_nfe)
-    import_folder = company.nfe_import_folder
+    # import_folder = company.nfe_import_folder
 
     if result.resposta.status == 200:  # Webservice ok
         if result.resposta.cStat.valor == '139':
             nfe = result.resposta.retNFe[0]
             if nfe.cStat.valor == '140':
-                if not os.path.exists(nome_arq):
-                    os.makedirs(nome_arq)
                 return {
                     'code': nfe.cStat.valor, 'message': nfe.xMotivo.valor,
                     'file_sent': result.envio.xml,
