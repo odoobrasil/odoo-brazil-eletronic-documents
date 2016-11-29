@@ -21,20 +21,18 @@
 #                                                                             #
 ###############################################################################
 
-import re
 import base64
-import string
-import pysped
+import re
 import tempfile
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
 from openerp.tools.translate import _
-
 from pysped.nfe.leiaute.consrecinfe_310 import ProtNFe
 
 
 class NFeSerializer(object):
+
     def __init__(self):
         self.nfe = None
         self.nfref = None

@@ -22,13 +22,14 @@
 #
 ##############################################################################
 
-import os
-import logging
 import cPickle
+import logging
+import os
+
 from openerp import models, fields, api
-from openerp.tools.translate import _
 from openerp.addons.nfe.sped.nfe.nfe_factory import NfeFactory
 from openerp.exceptions import Warning
+from openerp.tools.translate import _
 
 from ..service.nfe_serializer import NFeSerializer
 

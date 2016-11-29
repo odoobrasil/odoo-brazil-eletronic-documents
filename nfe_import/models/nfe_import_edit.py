@@ -20,11 +20,11 @@
 ###############################################################################
 
 import cPickle
-from decimal import Decimal
+
 from openerp import api, fields, models
-from openerp.tools.translate import _
-from openerp.exceptions import Warning
 from openerp.addons.product.product import check_ean
+from openerp.exceptions import Warning
+from openerp.tools.translate import _
 
 
 class NfeImportEdit(models.TransientModel):
