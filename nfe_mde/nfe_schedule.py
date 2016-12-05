@@ -146,8 +146,9 @@ class NfeSchedule(models.TransientModel):
                     }
 
                     obj = env_events.create(event)
-                    self.env['ir.attachment'].create(
-                        {
+
+                    if nfe_result['file_returned']:
+                        self.env['ir.attachment'].create({
                             'name': u"Consulta manifesto - {0}".format(
                                 company.cnpj_cpf),
                             'datas': base64.b64encode(
