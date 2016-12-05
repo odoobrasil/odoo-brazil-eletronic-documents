@@ -52,8 +52,8 @@ class NfeSchedule(models.TransientModel):
         return cnpj
 
     @api.model
-    def schedule_download(self, raise_error=False):
-        companies = self.env['res.company'].search([])
+    def schedule_download(self, raise_error=False, domain=()):
+        companies = self.env['res.company'].search(domain)
         for company in companies:
             try:
                 validate_nfe_configuration(company)
