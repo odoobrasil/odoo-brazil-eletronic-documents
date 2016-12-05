@@ -53,6 +53,7 @@ class NfeSchedule(models.TransientModel):
 
     @api.model
     def schedule_download(self, raise_error=False, domain=()):
+        nfe_mdes = []
         companies = self.env['res.company'].search(domain)
         for company in companies:
             try:
@@ -127,6 +128,7 @@ class NfeSchedule(models.TransientModel):
                                 })
 
                         company.last_nsu_nfe = nfe['NSU']
+                        nfe_mdes.append(nfe)
                 else:
 
                     event = {
@@ -164,6 +166,7 @@ class NfeSchedule(models.TransientModel):
                         u'Atenção',
                         u'Não foi possivel efetuar a consulta!\n '
                         u'Verifique o log')
+        return nfe_mdes
 
     @api.multi
     def execute_download(self):
