@@ -59,7 +59,14 @@ class NfeSchedule(models.TransientModel):
             try:
                 validate_nfe_configuration(company)
                 nfe_result = distribuicao_nfe(company, company.last_nsu_nfe)
-
+            except Exception:
+                _logger.error("Erro ao consultar Manifesto", exc_info=True)
+                if raise_error:
+                    raise UserError(
+                        u'Atenção',
+                        u'Não foi possivel efetuar a consulta!\n '
+                        u'Verifique o log')
+            else:
                 env_events = self.env['l10n_br_account.document_event']
 
                 if nfe_result['code'] == '137' or nfe_result['code'] == '138':
@@ -160,13 +167,6 @@ class NfeSchedule(models.TransientModel):
                             'res_id': obj.id
                         })
 
-            except Exception:
-                _logger.error("Erro ao consultar Manifesto", exc_info=True)
-                if raise_error:
-                    raise UserError(
-                        u'Atenção',
-                        u'Não foi possivel efetuar a consulta!\n '
-                        u'Verifique o log')
         return nfe_mdes
 
     @api.multi
