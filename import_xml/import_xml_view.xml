@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+
+        <record model="ir.ui.view" id="import_xml_tree">
+            <field name="name">import.xml.tree</field>
+            <field name="model">import.xml</field>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <tree string="Importar Apontamentos">
+                    <field name="name"/>
+                    <field name="input_file"/>
+                    <field name="state"/>
+                    <field name="user_id" colspan="2"/>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="import_xml_form">
+            <field name="name">import.xml.form</field>
+            <field name="model">import.xml</field>
+            <field name="arch" type="xml">
+                <form string="Importar XML" col="8">
+                <group>
+                    <label for="name" string="NFe"/>
+                    <field name="name" colspan="2"/>
+                    <field name="input_file" colspan="2"/>
+                    <field name="user_id" colspan="2" invisible="1"/>
+                    <button string="Import Data" type="object" name="import_to_db" icon="terp-stock_effects-object-colorize" colspan="2"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,close" statusbar_colors='{"pending":"blue"}' readonly="1" />
+                </group>
+                <group>
+                    <button name="set_done" string="Importado" type="object" states="open" groups="base.group_user"/>
+                    <button name="set_open" string="Re-enviar" type="object" states="close,cancelled" groups="base.group_user"/>
+                    <button name="set_cancelled" string="Cancelar" type="object" states="open" groups="base.group_user"/>
+                </group>
+                </form>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="import_xml_view_event_form">
+            <field name="name">import.xml.view.event.form</field>
+            <field name="model">import.xml</field>
+            <field name="arch" type="xml">
+                <form string="Importar XML" version="7.0">
+                    <header>
+                        <button name="set_done" string="Importado" type="object" states="open" groups="base.group_user" colspan="10"/>
+                        <button name="set_open" string="Re-ativar" type="object" states="done,cancelled" groups="base.group_user" colspan="10"/>
+                        <button name="set_cancelled" string="Suspender" type="object" states="open" groups="base.group_user"/>
+                        <field name="state" widget="statusbar" statusbar_visible="open,done" statusbar_colors='{"pending":"blue"}' readonly="1" />
+                    </header>
+                    <sheet>
+                        <label string="Informar dados da NF a importar."/>
+                        <p />
+                        <field name="name" colspan="2"/>
+                        <field name="company_id"/>
+                        <field name="location_id"/>
+                        <field name="categ_id"/>
+                        <field name="pos_categ_id"/>
+                        <field name="input_file" colspan="2"/>
+                        <field name="user_id" colspan="2" invisible="1"/>
+                        <button string="Importar" type="object" name="import_to_db" icon="terp-stock_effects-object-colorize" colspan="2"/>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="import_xml_event_action">
+            <field name="name">import.xml.event.action</field>
+            <field name="res_model">import.xml</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_type">form</field>
+            <field name="view_id" ref="import_xml_view_event_form"/>
+	    <field name="target">current</field>
+        </record>        
+
+
+        <menuitem name="Importar XML" id="import_xml_menu" parent="base.menu_purchase_root" action="import_xml_event_action"/>
+    </data>
+</openerp>
