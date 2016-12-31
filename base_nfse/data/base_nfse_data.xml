@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+		<record id="seq_type_lote_nfse" model="ir.sequence.type">
+			<field name="name">Lote NFS-e</field>
+			<field name="code">lote.nfse</field>
+			<field name="company_id" ref="base.main_company" />
+		</record>
+
+	</data>
+</openerp>

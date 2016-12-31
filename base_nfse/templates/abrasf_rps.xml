@@ -1,0 +1,77 @@
+{% extends "soap_header.xml" %}
+{% block content %}
+<e:EnviarLoteRpsEnvio xmlns:e="http://www.betha.com.br/e-nota-contribuinte-ws">
+	<LoteRps Id="{{ nfse.id }}">
+		<NumeroLote>{{ nfse.numero_lote }}</NumeroLote>
+		<Cnpj>{{ nfse.cnpj }}</Cnpj>
+		<InscricaoMunicipal>{{ nfse.inscricao_municipal }}</InscricaoMunicipal>
+		<QuantidadeRps>{{ nfse.lista_rps|length }}</QuantidadeRps>
+		<ListaRps>
+			{% for rps in nfse.lista_rps -%}
+			<Rps>
+				<InfRps Id="{{ rps.id }}">
+					<IdentificacaoRps>
+						<Numero>{{ rps.numero }}</Numero>
+						<Serie>{{ rps.serie }}</Serie>
+						<Tipo>{{ rps.tipo }}</Tipo>
+					</IdentificacaoRps>
+					<DataEmissao>{{ rps.data }}</DataEmissao>
+					<NaturezaOperacao>{{ rps.natureza }}</NaturezaOperacao>
+					<OptanteSimplesNacional>{{ rps.optante_simples }}</OptanteSimplesNacional>
+					<IncentivadorCultural>{{ rps.incentivo }}</IncentivadorCultural>
+					<Status>{{ rps.status }}</Status>
+					{% for servico in rps.servicos %}
+					<Servico>
+						<Valores>
+							<ValorServicos>{{ servico.valor }}</ValorServicos>
+							<ValorDeducoes>{{ servico.deducoes }}</ValorDeducoes>
+							<ValorPis>{{ servico.pis }}</ValorPis>
+							<ValorCofins>{{ servico.cofins }}</ValorCofins>
+							<ValorInss>{{ servico.inss }}</ValorInss>
+							<ValorIr>{{ servico.ir }}</ValorIr>
+							<ValorCsll>{{ servico.csll }}</ValorCsll>
+							<IssRetido>{{ servico.retido }}</IssRetido>
+							<ValorIss>{{ servico.iss }}</ValorIss>
+							<OutrasRetencoes>{{ servico.outras_retencoes }}</OutrasRetencoes>
+							<BaseCalculo>{{ servico.base }}</BaseCalculo>
+							<Aliquota>{{ servico.aliquota }}</Aliquota>
+							<ValorLiquidoNfse>{{ servico.valor_liquido }}</ValorLiquidoNfse>
+							<ValorIssRetido>{{ servico.iss_retido }}</ValorIssRetido>
+							<DescontoCondicionado>{{ servico.desconto_condicionado }}</DescontoCondicionado>
+							<DescontoIncondicionado>{{ servico.desconto_incodicionado }}</DescontoIncondicionado>
+						</Valores>
+						<ItemListaServico>{{ servico.codigo }}</ItemListaServico>
+						<CodigoCnae>{{ servico.cnae }}</CodigoCnae>
+						<CodigoTributacaoMunicipio>{{ servico.codigo_tributacao }}</CodigoTributacaoMunicipio>
+						<Discriminacao>{{ servico.discriminacao }}</Discriminacao>
+						<CodigoMunicipio>{{ servico.cod_municipio }}</CodigoMunicipio>
+					</Servico>
+					{% endfor %}
+					<Prestador>
+						<Cnpj>{{ rps.prestador.cnpj }}</Cnpj>
+						<InscricaoMunicipal>{{ rps.prestador.inscricao_municipal }}</InscricaoMunicipal>
+					</Prestador>
+					<Tomador>
+						<IdentificacaoTomador>
+							<CpfCnpj>
+								<Cpf>{{ rps.tomador.cnpj }}</Cpf>
+							</CpfCnpj>
+						</IdentificacaoTomador>
+						<RazaoSocial>{{ rps.tomador.razao_social }}</RazaoSocial>
+						<Endereco>
+							<Endereco>{{ rps.tomador.endereco }}</Endereco>
+							<Numero>{{ rps.tomador.numero }}</Numero>
+							<Complemento>{{ rps.tomador.complemento }}</Complemento>
+							<Bairro>{{ rps.tomador.bairro }}</Bairro>
+							<CodigoMunicipio>{{ rps.tomador.cod_municipio }}</CodigoMunicipio>
+							<Uf>{{ rps.tomador.uf }}</Uf>
+							<Cep>{{ rps.tomador.cep }}</Cep>
+						</Endereco>
+					</Tomador>
+				</InfRps>			
+			</Rps>
+			{%- endfor %}
+		</ListaRps>
+	</LoteRps>	
+</e:EnviarLoteRpsEnvio>
+{% endblock %}
