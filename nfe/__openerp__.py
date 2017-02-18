@@ -43,6 +43,7 @@
     'depends': [
         'account_cancel',
         'l10n_br_account_product',
+        'report_xls',
     ],
     'data': [
         'security/ir.model.access.csv',
