@@ -124,6 +124,7 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 importer.fiscal_category_id.property_journal.id
 
             product_import_ids = []
+            line_ids = ()
 
             for inv_line in inv_values['invoice_line']:
                 inv_line[2][
@@ -150,8 +151,11 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                 if self.account_invoice_id:
                     line = self.account_invoice_id.invoice_line.filtered(
                         lambda x: x.product_id.id == inv_vals['product_id'] and
-                        x.quantity == inv_vals['quantity_xml'])
-                    inv_vals['invoice_line_id'] = line.id
+                        x.quantity == inv_vals['quantity_xml'] and
+                        x.id not in line_ids)
+                    if line:
+                        line_ids += (line[0].id,)
+                        inv_vals['invoice_line_id'] = line[0].id
 
                 product_import_ids.append((0, 0, inv_vals))
 
