@@ -322,16 +322,16 @@ class NFeSerializer(object):
                 True, self.nfe.infNFe.emit.CNPJ.valor)
             supplierinfo_ids = self.env['product.supplierinfo'].search(
                 ['|', ('name.cnpj_cpf', '=', cnpj_cpf),
-                 ('name.cnpj_cpf',
-                  '=',
-                  self.nfe.infNFe.emit.CNPJ.valor),
-                 ('product_code', '=', self.det.prod.cProd.valor)])
+                 ('name.cnpj_cpf', '=', self.nfe.infNFe.emit.CNPJ.valor),
+                 ('product_code', '=', self.det.prod.cProd.valor),
+                 ('product_tmpl_id.active', '=', True)])
             if len(supplierinfo_ids) > 0:
                 supplier_info = supplierinfo_ids[0]
-                inv_line['product_id'] = supplier_info.product_tmpl_id\
-                    .product_variant_ids[0].id
-                inv_line['name'] = supplier_info.product_tmpl_id\
-                    .product_variant_ids[0].name
+                if supplier_info.product_tmpl_id.product_variant_count > 0:
+                    inv_line['product_id'] = supplier_info.product_tmpl_id\
+                        .product_variant_ids[0].id
+                    inv_line['name'] = supplier_info.product_tmpl_id\
+                        .product_variant_ids[0].name
             else:
                 inv_line['product_id'] = False
                 inv_line['name'] = ''
