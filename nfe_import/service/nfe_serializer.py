@@ -27,6 +27,7 @@ import tempfile
 from datetime import datetime
 from decimal import Decimal
 
+from openerp import tools
 from openerp.tools.translate import _
 from openerp.exceptions import Warning as UserError
 
@@ -133,6 +134,8 @@ class NFeSerializer(object):
         res['ind_final'] = self.nfe.infNFe.ide.indFinal.valor
         res['ind_pres'] = self.nfe.infNFe.ide.indPres.valor
         res['date_hour_invoice'] = self.nfe.infNFe.ide.dhEmi.valor
+        res['date_invoice'] = res['date_hour_invoice'].strftime(
+            tools.DEFAULT_SERVER_DATE_FORMAT)
         res['nfe_version'] = '3.10'
         res['type'] = 'in_invoice'  # Fixo por hora - apenas nota de entrada
         return res
