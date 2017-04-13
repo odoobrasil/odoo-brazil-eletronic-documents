@@ -290,11 +290,12 @@ class NfeImportEdit(models.TransientModel):
             'origin': 'Fatura: %s-%s' % (invoice.internal_number,
                                          invoice.vendor_serie),
             'partner_id': invoice.partner_id.id,
-            'invoice_state': 'none',
+            'invoice_state': 'invoiced',
             'fiscal_category_id': invoice.fiscal_category_id.id,
             'fiscal_position': invoice.fiscal_position.id,
             'picking_type_id': picking_type_id.id,
             'move_lines': [],
+            'invoice_ids': [(4, invoice.id)],
         }
         for line in invoice.invoice_line:
             move_vals = {
