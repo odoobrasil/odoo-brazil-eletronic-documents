@@ -46,6 +46,7 @@ class AccountInvoice(models.Model):
             if self.company_id.nfse_environment == '1':  # Produção
                 self.verify_code = result['verify_code']
                 self.internal_number = result['nfse_number']
+        return
 
     @api.multi
     def _hook_validation(self):
