@@ -197,7 +197,30 @@ class NfeImportEdit(models.TransientModel):
     def save_invoice_values(self, inv_values):
         self.ensure_one()
 
+        existing_invoice = self.env['account.invoice'].search([
+            ('company_id', '=', inv_values['company_id']),
+            ('nfe_access_key', '=', inv_values['nfe_access_key']),
+        ])
+
+        if existing_invoice and not self.account_invoice_id:
+            self.account_invoice_id = existing_invoice.ensure_one()
+
         if self.account_invoice_id:
+            selected_nfe_key = self.account_invoice_id.nfe_access_key
+            if existing_invoice:
+                existing_key = existing_invoice.nfe_access_key
+                if selected_nfe_key and selected_nfe_key != existing_key:
+                    raise UserError(
+                        'Existe NFe cadastrada na empresa com a chave de ' +
+                        'acesso que consta no XML fornecedido. Esta chave ' +
+                        'difere da chave de acesso da NFe a ser vinculada.')
+            else:
+                if (selected_nfe_key and
+                        selected_nfe_key != inv_values['nfe_access_key']):
+                    raise UserError(
+                        'A NFe a ser vinculada possui chave de acesso ' +
+                        'diferente da que consta no XML fornecido.')
+
             vals = {
                 'vendor_serie': inv_values['vendor_serie'],
                 'fiscal_document_id': inv_values['fiscal_document_id'],
