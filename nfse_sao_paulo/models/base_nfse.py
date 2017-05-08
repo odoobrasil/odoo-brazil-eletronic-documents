@@ -130,10 +130,10 @@ class BaseNfse(models.TransientModel):
         return super(BaseNfse, self).check_nfse_by_lote()
 
     @api.multi
-    def print_pdf(self, invoice):
+    def print_pdf(self):
         if self.city_code == '50308':  # São Paulo IBGE Code
             return self.env['report'].get_action(
-                invoice, 'nfse_sao_paulo.danfse_report')
+                self.invoice_id, 'nfse_sao_paulo.danfse_report')
 
     def _url_envio_nfse(self):
         if self.city_code == '50308':  # São Paulo
@@ -162,15 +162,15 @@ class BaseNfse(models.TransientModel):
                 descricao_servicos += line.name + '\n'
             result['lista_rps'][0]['descricao'] = descricao_servicos
 
-            assinatura = ('%s%s%s%s%sN%s%s%s%s%s%s') % (
+            assinatura = ('%s%s%s%s%sN%s%015d%015d%s%s%s') % (
                 str(inscr).zfill(8),
                 inv.document_serie_id.code.ljust(5),
                 str(inv.internal_number).zfill(12),
                 str(data_envio[0:4] + data_envio[5:7] + data_envio[8:10]),
                 str(tipo_recolhimento),
                 str(iss_retido),
-                str(int(valor_servico*100)).zfill(15),
-                str(int(valor_deducao*100)).zfill(15),
+                round(valor_servico*100),
+                round(valor_deducao*100),
                 str(codigo_atividade).zfill(5),
                 str(tipo_cpfcnpj),
                 str(cnpj_cpf).zfill(14)

@@ -314,4 +314,4 @@ class AccountInvoice(models.Model):
             'invoice_id': self.id,
             'city_code': self.company_id.l10n_br_city_id.ibge_code
         })
-        return base_nfse.print_pdf(self)
+        return base_nfse.print_pdf()
