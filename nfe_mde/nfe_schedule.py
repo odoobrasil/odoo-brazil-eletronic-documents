@@ -31,7 +31,9 @@ class NfeSchedule(models.TransientModel):
 
     @api.model
     def schedule_download(self, raise_error=False, domain=()):
-        companies = self.env['res.company'].search(domain)
+        companies = self.env['res.company'].search([
+            ('nfe_a1_file', '!=', False)
+        ])
         return companies.query_nfe_batch(raise_error=raise_error)
 
     @api.multi

@@ -209,10 +209,11 @@ class AccountInvoice(models.Model):
         fiscal_document_id = self.document_serie_id.fiscal_document_id
         electronic = self.document_serie_id.fiscal_document_id.electronic
         nfe_protocol = self.nfe_protocol_number
+        emitente = self.issuer
 
         if ((document_serie_id and fiscal_document_id and not electronic) or
-                not nfe_protocol):
-            return super(AccountInvoice, self).action_cancel()
+                not nfe_protocol) or emitente == u'1':
+            return self.action_cancel()
         else:
             result = self.env['ir.actions.act_window'].for_xml_id(
                 'nfe',

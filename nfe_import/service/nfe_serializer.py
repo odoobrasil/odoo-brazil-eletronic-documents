@@ -27,6 +27,7 @@ import tempfile
 from datetime import datetime
 from decimal import Decimal
 
+from openerp import tools
 from openerp.tools.translate import _
 from openerp.exceptions import Warning as UserError
 
@@ -68,11 +69,9 @@ class NFeSerializer(object):
         }
         try:
             nfe_references = self._get_nfe_references()
-            ref = self.env['l10n_br_account_product.document.related'].create(
-                nfe_references)
 
             invoice_vals.update(
-                {'fiscal_document_related_ids': [(4, ref.id, None)]})
+                {'fiscal_document_related_ids': [(0, False, nfe_references)]})
         except AttributeError:
             pass
 
@@ -133,6 +132,8 @@ class NFeSerializer(object):
         res['ind_final'] = self.nfe.infNFe.ide.indFinal.valor
         res['ind_pres'] = self.nfe.infNFe.ide.indPres.valor
         res['date_hour_invoice'] = self.nfe.infNFe.ide.dhEmi.valor
+        res['date_invoice'] = res['date_hour_invoice'].strftime(
+            tools.DEFAULT_SERVER_DATE_FORMAT)
         res['nfe_version'] = '3.10'
         res['type'] = 'in_invoice'  # Fixo por hora - apenas nota de entrada
         return res
@@ -380,7 +381,8 @@ class NFeSerializer(object):
 
         inv_line['freight_value'] = float(self.det.prod.vFrete.valor)
         inv_line['insurance_value'] = float(self.det.prod.vSeg.valor)
-        inv_line['discount_value'] = float(self.det.prod.vDesc.valor)
+        inv_line['discount'] = (
+            (float(self.det.prod.vDesc.valor)/inv_line['price_gross']) * 100)
         inv_line['other_costs_value'] = float(self.det.prod.vOutro.valor)
 
         # Código do serviço não vai existir se for produto

@@ -48,7 +48,7 @@ class NfeImportEdit(models.TransientModel):
                                  default=_default_company)
     currency_id = fields.Many2one(related='company_id.currency_id',
                                   string='Moeda', readonly=True)
-    xml_data = fields.Char(string="Xml Data", size=200000, readonly=True)
+    xml_data = fields.Binary(string="Xml Data", readonly=True)
     edoc_input = fields.Binary(u'Arquivo do documento eletrônico',
                                help=u'Somente arquivos no formato TXT e XML')
     file_name = fields.Char('File Name', size=128)
@@ -124,11 +124,10 @@ class NfeImportEdit(models.TransientModel):
     @api.multi
     def confirm_values(self):
         self.ensure_one()
-        inv_values = cPickle.loads(self.xml_data.encode('ascii', 'ignore'))
+        inv_values = cPickle.loads(self.xml_data)
 
-        index = 0
-        for item in self.product_import_ids:
-            line = inv_values['invoice_line'][index]
+        for index, item in enumerate(self.product_import_ids):
+            line = inv_values['invoice_line'][index][2]
 
             if not item.product_id:
                 if self.create_product:
@@ -137,9 +136,9 @@ class NfeImportEdit(models.TransientModel):
                     item.product_id = product_created
                     item.uom_id = product_created.uom_id
 
-                    line[2]['product_id'] = product_created.id
-                    line[2]['uos_id'] = product_created.uom_id.id
-                    line[2]['account_id'] = (
+                    line['product_id'] = product_created.id
+                    line['uos_id'] = product_created.uom_id.id
+                    line['account_id'] = (
                         product_created.property_account_income.id or
                         product_created.categ_id.
                         property_account_income_categ.id)
@@ -152,12 +151,12 @@ class NfeImportEdit(models.TransientModel):
                     })
 
             else:
-                line[2]['product_id'] = item.product_id.id
-                line[2]['account_id'] = (
+                line['product_id'] = item.product_id.id
+                line['account_id'] = (
                     item.product_id.property_account_income.id or
                     item.product_id.categ_id.property_account_income_categ.id)
-                line[2]['uos_id'] = item.uom_id.id
-                line[2]['cfop_id'] = item.cfop_id.id
+                line['uos_id'] = item.uom_id.id
+                line['cfop_id'] = item.cfop_id.id
 
                 total_recs = self.env['product.supplierinfo'].search_count(
                     [('name', '=', self.supplier_id.id),
@@ -171,10 +170,9 @@ class NfeImportEdit(models.TransientModel):
                         'product_tmpl_id': item.product_id.product_tmpl_id.id
                     })
 
-            inv_values['invoice_line'][
-                index] = self.fiscal_position.fiscal_position_map(line[2])
-
-            index += 1
+            inv_values['invoice_line'][index][2].update(
+                self.fiscal_position.fiscal_position_map(line)
+            )
 
         self._validate()
 
@@ -197,7 +195,30 @@ class NfeImportEdit(models.TransientModel):
     def save_invoice_values(self, inv_values):
         self.ensure_one()
 
+        existing_invoice = self.env['account.invoice'].search([
+            ('company_id', '=', inv_values['company_id']),
+            ('nfe_access_key', '=', inv_values['nfe_access_key']),
+        ])
+
+        if existing_invoice and not self.account_invoice_id:
+            self.account_invoice_id = existing_invoice.ensure_one()
+
         if self.account_invoice_id:
+            selected_nfe_key = self.account_invoice_id.nfe_access_key
+            if existing_invoice:
+                existing_key = existing_invoice.nfe_access_key
+                if selected_nfe_key and selected_nfe_key != existing_key:
+                    raise UserError(
+                        'Existe NFe cadastrada na empresa com a chave de ' +
+                        'acesso que consta no XML fornecedido. Esta chave ' +
+                        'difere da chave de acesso da NFe a ser vinculada.')
+            else:
+                if (selected_nfe_key and
+                        selected_nfe_key != inv_values['nfe_access_key']):
+                    raise UserError(
+                        'A NFe a ser vinculada possui chave de acesso ' +
+                        'diferente da que consta no XML fornecido.')
+
             vals = {
                 'vendor_serie': inv_values['vendor_serie'],
                 'fiscal_document_id': inv_values['fiscal_document_id'],
@@ -245,30 +266,30 @@ class NfeImportEdit(models.TransientModel):
     @api.multi
     def product_create(
             self, inv_values, line, item_grid, default_category=None):
-        if not line[2]['fiscal_classification_id']:
+        if not line['fiscal_classification_id']:
             fc_env = self.env['account.product.fiscal.classification']
-            ncm = fc_env.search([('name', '=', line[2]['ncm_xml'])], limit=1)
+            ncm = fc_env.search([('name', '=', line['ncm_xml'])], limit=1)
             if not ncm:
                 ncm = fc_env.create({
-                    'name': line[2]['ncm_xml'],
+                    'name': line['ncm_xml'],
                     'company_id': inv_values['company_id'],
                     'type': 'normal'
                 })
-            line[2]['fiscal_classification_id'] = ncm.id
+            line['fiscal_classification_id'] = ncm.id
 
         vals = {
-            'name': line[2]['product_name_xml'],
+            'name': line['product_name_xml'],
             'type': 'product',
             'fiscal_type': 'product',
-            'ncm_id': line[2]['fiscal_classification_id'],
-            'default_code': line[2]['product_code_xml'],
+            'ncm_id': line['fiscal_classification_id'],
+            'default_code': line['product_code_xml'],
         }
 
         if default_category:
             vals['categ_id'] = default_category.id
 
-        if check_ean(line[2]['ean_xml']):
-            vals['ean13'] = line[2]['ean_xml']
+        if check_ean(line['ean_xml']):
+            vals['ean13'] = line['ean_xml']
 
         if item_grid.uom_id:
             vals['uom_id'] = item_grid.uom_id.id
@@ -290,11 +311,12 @@ class NfeImportEdit(models.TransientModel):
             'origin': 'Fatura: %s-%s' % (invoice.internal_number,
                                          invoice.vendor_serie),
             'partner_id': invoice.partner_id.id,
-            'invoice_state': 'none',
+            'invoice_state': 'invoiced',
             'fiscal_category_id': invoice.fiscal_category_id.id,
             'fiscal_position': invoice.fiscal_position.id,
             'picking_type_id': picking_type_id.id,
             'move_lines': [],
+            'invoice_ids': [(4, invoice.id)],
         }
         for line in invoice.invoice_line:
             move_vals = {

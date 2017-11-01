@@ -80,27 +80,26 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
 
     def _validate_against_invoice(self, invoice_values, invoice):
         if len(invoice_values['invoice_line']) != len(invoice.invoice_line):
-            raise Exception(
+            raise UserError(
                 u'O xml não possui o mesmo número de itens da fatura')
         if "cnpj_cpf" in invoice_values:
             if invoice_values["cnpj_cpf"] != invoice.partner_id.cnpj_cpf:
-                raise Exception(
+                raise UserError(
                     u'O CNPJ não corresponde ao fornecedor da fatura')
         else:
             if invoice_values["partner_id"] != invoice.partner_id.id:
-                raise Exception(
+                raise UserError(
                     u'O CNPJ não corresponde ao fornecedor da fatura')
 
     @api.multi
     def import_edoc(self):
         try:
             self.ensure_one()
-            importer = self[0]
 
-            self._check_extension(importer.file_name)
+            self._check_extension(self.file_name)
 
             nfe_serializer = NFeSerializer()
-            eDoc = nfe_serializer.import_edoc(self.env, importer.edoc_input)[0]
+            eDoc = nfe_serializer.import_edoc(self.env, self.edoc_input)[0]
 
             inv_values = eDoc['values']
             if self.account_invoice_id:
@@ -108,44 +107,43 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
                     inv_values,
                     self.account_invoice_id)
 
-            if importer.create_partner and not inv_values['partner_id']:
+            if self.create_partner and not inv_values['partner_id']:
                 partner = self.env['res.partner'].create(
                     inv_values['partner_values'])
                 inv_values['partner_id'] = partner.id
                 inv_values['account_id'] = partner.property_account_payable.id
             elif not inv_values['partner_id']:
-                raise Exception(
+                raise UserError(
                     u'Fornecedor não cadastrado, o xml não será importado\n'
                     u'Marque a opção "Criar fornecedor" se deseja importar '
                     u'mesmo assim')
 
-            inv_values['fiscal_category_id'] = importer.fiscal_category_id.id
-            inv_values['fiscal_position'] = importer.fiscal_position.id
-            inv_values['journal_id'] = \
-                importer.fiscal_category_id.property_journal.id
+            fiscal_category = self.fiscal_category_id
+            inv_values['fiscal_category_id'] = fiscal_category.id
+            inv_values['fiscal_position'] = self.fiscal_position.id
+            inv_values['journal_id'] = fiscal_category.property_journal.id
 
             product_import_ids = []
 
-            for inv_line in inv_values['invoice_line']:
-                inv_line[2][
-                    'fiscal_category_id'] = importer.fiscal_category_id.id
-                inv_line[2]['fiscal_position'] = importer.fiscal_position.id
+            for record in inv_values['invoice_line']:
+                inv_line = record[2]
+                inv_line['fiscal_category_id'] = fiscal_category.id
+                inv_line['fiscal_position'] = self.fiscal_position.id
 
-                inv_line = self.fiscal_position.fiscal_position_map(
-                    inv_line[2])
+                inv_line = self.fiscal_position.fiscal_position_map(inv_line)
 
                 inv_vals = {
-                    'product_id': inv_line[2]['product_id'],
-                    'uom_id': inv_line[2]['uos_id'],
-                    'code_product_xml': inv_line[2]['product_code_xml'],
-                    'uom_xml': inv_line[2]['uom_xml'],
-                    'product_xml': inv_line[2]['product_name_xml'],
-                    'cfop_id': inv_line[2]['cfop_id'],
-                    'cfop_xml': inv_line[2]['cfop_xml'],
-                    'quantity_xml': inv_line[2]['quantity'],
-                    'unit_amount_xml': inv_line[2]['price_unit'],
-                    'discount_total_xml': inv_line[2]['discount_value'],
-                    'total_amount_xml': inv_line[2]['price_gross']
+                    'product_id': inv_line['product_id'],
+                    'uom_id': inv_line['uos_id'],
+                    'code_product_xml': inv_line['product_code_xml'],
+                    'uom_xml': inv_line['uom_xml'],
+                    'product_xml': inv_line['product_name_xml'],
+                    'cfop_id': inv_line['cfop_id'],
+                    'cfop_xml': inv_line['cfop_xml'],
+                    'quantity_xml': inv_line['quantity'],
+                    'unit_amount_xml': inv_line['price_unit'],
+                    'discount_total_xml': inv_line['discount'],
+                    'total_amount_xml': inv_line['price_gross']
                 }
 
                 if self.account_invoice_id:
@@ -159,17 +157,17 @@ class NfeImportAccountInvoiceImport(models.TransientModel):
             values = {
                 'supplier_id': inv_values['partner_id'],
                 'import_from_invoice': (
-                    True if importer.account_invoice_id else False),
-                'account_invoice_id': importer.account_invoice_id.id,
-                'fiscal_category_id': importer.fiscal_category_id.id,
-                'fiscal_position': importer.fiscal_position.id,
+                    True if self.account_invoice_id else False),
+                'account_invoice_id': self.account_invoice_id.id,
+                'fiscal_category_id': fiscal_category.id,
+                'fiscal_position': self.fiscal_position.id,
                 'number': inv_values['supplier_invoice_number'],
                 'natureza_operacao': inv_values['nat_op'],
                 'amount_total': inv_values['amount_total'],
                 'xml_data': cPickle.dumps(inv_values),
                 'product_import_ids': product_import_ids,
-                'edoc_input': importer.edoc_input,
-                'file_name': importer.file_name
+                'edoc_input': self.edoc_input,
+                'file_name': self.file_name
             }
 
             import_edit = self.env['nfe.import.edit'].create(values)
