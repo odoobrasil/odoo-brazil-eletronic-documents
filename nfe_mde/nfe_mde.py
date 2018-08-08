@@ -118,7 +118,9 @@ class NfeMde(models.Model):
         self.env['ir.attachment'].create(
             {
                 'name': file_name,
-                'datas': base64.b64encode(result['file_returned']),
+                'datas':
+                    result.get('file_returned') and
+                    base64.b64encode(result['file_returned']),
                 'datas_fname': file_name,
                 'description': u'Evento Manifesto Destinatário',
                 'res_model': 'l10n_br_account.document_event',

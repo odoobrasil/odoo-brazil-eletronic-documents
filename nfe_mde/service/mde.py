@@ -16,11 +16,17 @@
 # You should have received a copy of the GNU Affero General Public License    #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 ###############################################################################
+
+from __future__ import division, print_function, unicode_literals
+
+
 import base64
 import cStringIO
 import gzip
 import logging
 import re
+
+from openerp.addons.nfe.sped.nfe.processing.certificado import Certificado
 
 _logger = logging.getLogger(__name__)
 
@@ -34,8 +40,7 @@ def __processo(company):
     p = ProcessadorNFe()
     p.ambiente = int(company.nfe_environment)
     p.estado = company.partner_id.l10n_br_city_id.state_id.code
-    p.certificado.stream_certificado = base64.decodestring(company.nfe_a1_file)
-    p.certificado.senha = company.nfe_a1_password
+    p.certificado = Certificado(company)
     p.salvar_arquivos = False
     p.contingencia_SCAN = False
     return p
