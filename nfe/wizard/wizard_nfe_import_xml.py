@@ -1,7 +1,8 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2014 Rodolfo Leme Bertozo - KMEE - www.kmee.com.br            #
+# Copyright (C) 2016 Trustcode - www.trustcode.com.br                         #
+#              Danimar Ribeiro <danimaribeiro@gmail.com>                      #
 #                                                                             #
 # This program is free software: you can redistribute it and/or modify        #
 # it under the terms of the GNU Affero General Public License as published by #
@@ -15,46 +16,36 @@
 #                                                                             #
 # You should have received a copy of the GNU General Public License           #
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#                                                                             #
 ###############################################################################
 
-from __future__ import with_statement
-from odoo.report.render import render
-from odoo.report.interface import report_int
-from odoo.addons.nfe.sped.nfe.processing.xml import print_danfe
+
+from odoo import api, fields, models
 
 
-class external_pdf(render):
+class WizardNfeImport(models.TransientModel):
+    _inherit = 'nfe_import.account_invoice_import'
 
-    def __init__(self, pdf):
-        render.__init__(self)
-        self.pdf = pdf
-        self.output_type = 'pdf'
+    nfe_mde_id = fields.Many2one(
+        'nfe.mde', u"Xml de Manifesto",
+        domain="[('partner_id', '=', supplier_partner_id), \
+            ('xml_downloaded', '=', True), ('xml_imported', '=', False)]")
 
-    def _render(self):
-        return self.pdf
+    @api.multi
+    def import_edoc(self):
+        if self.nfe_mde_id:
+            attach_xml = self.env['ir.attachment'].search([
+                ('res_id', '=', self.nfe_mde_id.id),
+                ('res_model', '=', 'nfe.mde'),
+                ('name', '=like', 'NFe%')
+            ], limit=1)
 
+            if attach_xml:
+                self.edoc_input = attach_xml.datas
+                self.file_name = attach_xml.datas_fname
+            elif not self.edoc_input:
+                raise Warning(
+                    u'Atenção!',
+                    u'Selecione o xml ou manifesto para realizar a importação')
 
-class report_custom(report_int):
-    '''
-        Custom report for return danfe
-    '''
-
-    def create(self, cr, uid, ids, datas, context=None):
-        context = context or {}
-        active_ids = context.get('active_ids')
-        # list_account_invoice = []
-
-        ai_obj = self.env['account.invoice']
-        account_invoice = ai_obj.browse(cr, uid, active_ids)
-        # for account_invoice in ai_obj.browse(cr, uid, active_ids):
-        #     list_account_invoice.append(account_invoice.id)
-
-        pdf_string = print_danfe(account_invoice)
-
-        self.obj = external_pdf(pdf_string)
-
-        self.obj.render()
-        return (self.obj.pdf, 'pdf')
-
-
-report_custom('report.danfe_account_invoice')
+        return super(WizardNfeImport, self).import_edoc()

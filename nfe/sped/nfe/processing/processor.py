@@ -19,7 +19,7 @@
 
 from .certificado import Certificado
 
-from openerp.addons.nfe.tools.misc import mount_path_nfe
+from odoo.addons.nfe.tools.misc import mount_path_nfe
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -48,7 +48,6 @@ class ProcessadorNFe(ProcessadorNFePySped):
         self.salvar_arquivos = False
         self.contingencia_SCAN = False
         self.contingencia = False
-        self.danfe = DANFE()
         self.daede = DAEDE()
         self.caminho_temporario = ''
         self.maximo_tentativas_consulta_recibo = 5

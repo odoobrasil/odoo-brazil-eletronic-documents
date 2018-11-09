@@ -38,22 +38,40 @@
       Instalando geraldo
         sudo pip install geraldo
     """,
+    'external_dependencies': {
+        'python': [
+            'pysped'
+        ],
+    },
     'depends': [
         'l10n_br_account_product',
+        'barcodes',
     ],
     'data': [
+        'data/nfe_attach_email.xml',
         'security/ir.model.access.csv',
+        'wizard/nfe_xml_periodic_export.xml',
         'wizard/nfe_invoice_cancel_view.xml',
         'wizard/nfe_invoice_cce_view.xml',
         'wizard/nfe_invoice_cancel_view.xml',
-        'account_invoice_workflow.xml',
+        'wizard/l10n_br_account_invoice_import.xml',
+        'data/nfe_schedule.xml',
+        # 'account_invoice_workflow.xml',
         'views/l10n_br_account_view.xml',
         'views/account_invoice_view.xml',
         'views/res_partner_view.xml',
         'views/res_company_view.xml',
+        'views/nfe_mde_view.xml',
+        'views/account_fiscal_position_view.xml',
+        'views/nfe_import_view.xml',
         'report/report_print_button_view.xml',
+        'report/report_danfe.xml',
+        'wizard/wizard_nfe_import_xml_view.xml',
+    ],
+    'css': [
+        'static/src/css/nfe_import.css'
     ],
     'demo': [],
     'test': [],
-    'installable': False,
+    'installable': True,
 }
